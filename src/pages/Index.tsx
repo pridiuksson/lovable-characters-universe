@@ -26,44 +26,60 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header Section */}
-        <div className="text-center mb-12">
-          <h1 className="text-5xl font-bold text-white mb-4 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-            Character Universe
-          </h1>
-          <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-            Discover extraordinary characters and embark on immersive role-play adventures
-          </p>
+    <div className="min-h-screen bg-gradient-to-b from-zinc-50 to-white relative overflow-hidden">
+      {/* Ambient light effects */}
+      <div className="absolute inset-0 bg-gradient-radial from-purple-100/30 via-transparent to-transparent opacity-60" />
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-100/20 rounded-full blur-3xl animate-pulse" />
+      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-violet-100/20 rounded-full blur-3xl animate-pulse delay-1000" />
+      
+      <div className="relative z-10 container mx-auto px-8 py-16">
+        {/* Minimalist header */}
+        <div className="text-center mb-20 animate-fade-in">
+          <div className="inline-block">
+            <h1 className="text-6xl font-extralight text-zinc-900 mb-6 tracking-tight leading-none">
+              Character
+              <span className="block text-5xl font-thin text-zinc-600 mt-2">Universe</span>
+            </h1>
+            <div className="w-16 h-px bg-gradient-to-r from-transparent via-zinc-300 to-transparent mx-auto mb-8" />
+            <p className="text-lg font-light text-zinc-500 max-w-md mx-auto leading-relaxed">
+              Where stories begin and imagination takes flight
+            </p>
+          </div>
         </div>
 
-        {/* Featured Characters Section */}
-        <div className="mb-16">
-          <h2 className="text-3xl font-semibold text-white mb-8 text-center">
-            Featured Characters
-          </h2>
-          
+        {/* Content area */}
+        <div className="mb-24">
           {isLoading && (
-            <div className="flex justify-center items-center py-20">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-400"></div>
+            <div className="flex justify-center items-center py-32">
+              <div className="relative">
+                <div className="w-16 h-16 border-2 border-zinc-200 rounded-full animate-spin">
+                  <div className="absolute top-0 left-0 w-4 h-4 bg-zinc-400 rounded-full animate-pulse" />
+                </div>
+                <p className="text-zinc-400 text-sm font-light mt-6 text-center">Loading characters</p>
+              </div>
             </div>
           )}
           
           {error && (
-            <div className="text-center py-20">
-              <p className="text-red-400 text-lg">Unable to load characters at the moment</p>
-              <p className="text-gray-400 mt-2">Please try again later</p>
+            <div className="text-center py-32 animate-fade-in">
+              <div className="inline-block p-8 rounded-3xl bg-white/60 backdrop-blur-sm border border-zinc-200/50 shadow-xl">
+                <p className="text-zinc-600 text-lg font-light mb-2">Unable to connect</p>
+                <p className="text-zinc-400 text-sm font-light">Please check your connection and try again</p>
+              </div>
             </div>
           )}
           
           {characters && characters.length > 0 && (
-            <CharacterCarousel characters={characters} />
+            <div className="animate-fade-in delay-300">
+              <CharacterCarousel characters={characters} />
+            </div>
           )}
           
           {characters && characters.length === 0 && (
-            <div className="text-center py-20">
-              <p className="text-gray-400 text-lg">No characters available</p>
+            <div className="text-center py-32 animate-fade-in">
+              <div className="inline-block p-8 rounded-3xl bg-white/60 backdrop-blur-sm border border-zinc-200/50 shadow-xl">
+                <p className="text-zinc-500 text-lg font-light">No characters discovered yet</p>
+              </div>
             </div>
           )}
         </div>

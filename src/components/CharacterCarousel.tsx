@@ -14,7 +14,7 @@ const CharacterCarousel = ({ characters }: CharacterCarouselProps) => {
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollBy({
-        left: -320,
+        left: -400,
         behavior: 'smooth'
       });
     }
@@ -23,58 +23,52 @@ const CharacterCarousel = ({ characters }: CharacterCarouselProps) => {
   const scrollRight = () => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollBy({
-        left: 320,
+        left: 400,
         behavior: 'smooth'
       });
     }
   };
 
   return (
-    <>
-      <style>
-        {`
-          .scrollbar-hide::-webkit-scrollbar {
-            display: none;
-          }
-          .scrollbar-hide {
-            scrollbar-width: none;
-            -ms-overflow-style: none;
-          }
-        `}
-      </style>
-      <div className="relative">
-        {/* Navigation buttons */}
-        <button
-          onClick={scrollLeft}
-          className="absolute left-4 top-1/2 -translate-y-1/2 z-10 bg-black/50 hover:bg-black/70 text-white p-3 rounded-full transition-all duration-200 backdrop-blur-sm"
-          aria-label="Scroll left"
-        >
-          <ChevronLeft size={24} />
-        </button>
-        
-        <button
-          onClick={scrollRight}
-          className="absolute right-4 top-1/2 -translate-y-1/2 z-10 bg-black/50 hover:bg-black/70 text-white p-3 rounded-full transition-all duration-200 backdrop-blur-sm"
-          aria-label="Scroll right"
-        >
-          <ChevronRight size={24} />
-        </button>
+    <div className="relative group">
+      {/* Elegant navigation */}
+      <button
+        onClick={scrollLeft}
+        className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/80 backdrop-blur-md rounded-full border border-zinc-200/50 shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-500 hover:bg-white hover:scale-110 hover:shadow-xl flex items-center justify-center"
+        aria-label="Previous characters"
+      >
+        <ChevronLeft size={18} className="text-zinc-600" />
+      </button>
+      
+      <button
+        onClick={scrollRight}
+        className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/80 backdrop-blur-md rounded-full border border-zinc-200/50 shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-500 hover:bg-white hover:scale-110 hover:shadow-xl flex items-center justify-center"
+        aria-label="Next characters"
+      >
+        <ChevronRight size={18} className="text-zinc-600" />
+      </button>
 
-        {/* Carousel container */}
-        <div
-          ref={scrollContainerRef}
-          className="flex gap-6 overflow-x-auto scrollbar-hide pb-4 px-12"
-        >
-          {characters.map((character) => (
-            <CharacterCard
-              key={character.id}
-              character={character}
-              className="flex-shrink-0"
-            />
-          ))}
-        </div>
+      {/* Character grid with premium spacing */}
+      <div
+        ref={scrollContainerRef}
+        className="flex gap-8 overflow-x-auto scrollbar-hide pb-8 px-16"
+        style={{
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+          WebkitScrollbar: { display: 'none' }
+        }}
+      >
+        {characters.map((character, index) => (
+          <div
+            key={character.id}
+            className="animate-fade-in flex-shrink-0"
+            style={{ animationDelay: `${index * 100}ms` }}
+          >
+            <CharacterCard character={character} />
+          </div>
+        ))}
       </div>
-    </>
+    </div>
   );
 };
 
