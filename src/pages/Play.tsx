@@ -2,7 +2,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/types/Card";
-import { ArrowLeft, Play } from "lucide-react";
+import { ArrowLeft, Play as PlayIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const fetchCharacters = async (): Promise<Card[]> => {
@@ -103,7 +103,7 @@ const Play = () => {
                   size="lg" 
                   className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-6 text-lg"
                 >
-                  <Play className="mr-2 h-5 w-5" />
+                  <PlayIcon className="mr-2 h-5 w-5" />
                   Start Role-Play Adventure
                 </Button>
                 
