@@ -6,7 +6,7 @@ import { ArrowLeft, Play as PlayIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const fetchCharacters = async (): Promise<Card[]> => {
-  const response = await fetch('/api/characters');
+  const response = await fetch('https://yevyfxmmijukjohbdjwv.supabase.co/functions/v1/get-public-cards');
   if (!response.ok) {
     throw new Error('Failed to fetch characters');
   }

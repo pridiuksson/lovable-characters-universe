@@ -4,7 +4,7 @@ import CharacterCarousel from "@/components/CharacterCarousel";
 import { Card } from "@/types/Card";
 
 const fetchCharacters = async (): Promise<Card[]> => {
-  const response = await fetch('/api/characters');
+  const response = await fetch('https://yevyfxmmijukjohbdjwv.supabase.co/functions/v1/get-public-cards');
   if (!response.ok) {
     throw new Error('Failed to fetch characters');
   }
