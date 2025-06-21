@@ -52,11 +52,6 @@ const CharacterCarousel = ({ characters }: CharacterCarouselProps) => {
       <div
         ref={scrollContainerRef}
         className="flex gap-8 overflow-x-auto scrollbar-hide pb-8 px-16"
-        style={{
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none',
-          WebkitScrollbar: { display: 'none' }
-        }}
       >
         {characters.map((character, index) => (
           <div
