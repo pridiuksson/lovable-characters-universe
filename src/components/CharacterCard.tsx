@@ -1,9 +1,9 @@
-
 import { Card } from "@/types/Card";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { MessageCircle, ArrowLeft, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 
 interface CharacterCardProps {
   character: Card;
@@ -15,6 +15,7 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Array<{text: string, isUser: boolean}>>([]);
   const [progress] = useState(65); // Simulated progress
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const handleCardClick = () => {
     console.log('Card clicked, flipping to chat interface');
@@ -42,6 +43,23 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
       handleSendMessage();
     }
   };
+
+  // Handle click outside to close card
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isFlipped && chatContainerRef.current && !chatContainerRef.current.contains(event.target as Node)) {
+        setIsFlipped(false);
+      }
+    };
+
+    if (isFlipped) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isFlipped]);
 
   return (
     <>
@@ -99,7 +117,10 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
       {/* Full-screen chat interface when flipped */}
       {isFlipped && (
         <div className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="w-full max-w-6xl h-full max-h-[95vh] bg-gradient-to-br from-white via-zinc-50 to-zinc-100 rounded-3xl shadow-3xl border border-zinc-200/50 flex flex-col overflow-hidden animate-scale-in">
+          <div 
+            ref={chatContainerRef}
+            className="w-full max-w-6xl h-full max-h-[95vh] bg-gradient-to-br from-white via-zinc-50 to-zinc-100 rounded-3xl shadow-3xl border border-zinc-200/50 flex flex-col overflow-hidden animate-scale-in"
+          >
             
             {/* Redesigned Header with Character Portrait */}
             <div className="relative p-8 bg-white/70 backdrop-blur-xl border-b border-zinc-200/30">
@@ -113,9 +134,9 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
 
               {/* Character Profile Section */}
               <div className="flex items-start gap-8 max-w-5xl mx-auto">
-                {/* Character Portrait */}
+                {/* Character Portrait - Made Larger */}
                 <div className="relative flex-shrink-0">
-                  <div className="w-24 h-24 rounded-3xl overflow-hidden bg-gradient-to-br from-zinc-100 to-zinc-200 shadow-lg">
+                  <div className="w-32 h-32 rounded-3xl overflow-hidden bg-gradient-to-br from-zinc-100 to-zinc-200 shadow-lg">
                     <img
                       src={character.image_url}
                       alt={`Character ${character.id}`}
@@ -144,35 +165,49 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
                     </div>
                   </div>
 
-                  {/* Goal Section */}
-                  <div className="bg-gradient-to-r from-blue-50/60 to-indigo-50/60 rounded-2xl p-6 border border-zinc-200/30">
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
-                        <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
-                          Current Goal
-                        </p>
-                        <p className="text-lg font-light text-zinc-700 leading-relaxed">
-                          {character.goal}
+                  {/* Goal Section with Hover for Description */}
+                  <HoverCard>
+                    <HoverCardTrigger asChild>
+                      <div className="bg-gradient-to-r from-blue-50/60 to-indigo-50/60 rounded-2xl p-6 border border-zinc-200/30 cursor-pointer hover:bg-gradient-to-r hover:from-blue-50/80 hover:to-indigo-50/80 transition-all duration-300">
+                        <div className="flex items-start justify-between mb-4">
+                          <div>
+                            <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
+                              Current Goal
+                            </p>
+                            <p className="text-lg font-light text-zinc-700 leading-relaxed">
+                              {character.goal}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        {/* Progress Section */}
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
+                              Progress
+                            </span>
+                            <span className="text-sm font-light text-zinc-600">
+                              {progress}%
+                            </span>
+                          </div>
+                          <Progress 
+                            value={progress} 
+                            className="h-2 bg-white/60 border border-zinc-200/50" 
+                          />
+                        </div>
+                      </div>
+                    </HoverCardTrigger>
+                    <HoverCardContent className="w-80 p-4 bg-white/95 backdrop-blur-xl border border-zinc-200/50 shadow-xl rounded-2xl">
+                      <div className="space-y-3">
+                        <h4 className="text-sm font-medium text-zinc-900 uppercase tracking-wider">
+                          Character Description
+                        </h4>
+                        <p className="text-sm font-light text-zinc-600 leading-relaxed">
+                          {character.description || "A thoughtful companion ready to help you achieve your goals through meaningful conversations and gentle guidance."}
                         </p>
                       </div>
-                    </div>
-                    
-                    {/* Progress Section */}
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
-                          Progress
-                        </span>
-                        <span className="text-sm font-light text-zinc-600">
-                          {progress}%
-                        </span>
-                      </div>
-                      <Progress 
-                        value={progress} 
-                        className="h-2 bg-white/60 border border-zinc-200/50" 
-                      />
-                    </div>
-                  </div>
+                    </HoverCardContent>
+                  </HoverCard>
 
                   {/* Personality Traits */}
                   <div className="flex flex-wrap gap-2">
