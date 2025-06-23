@@ -46,17 +46,22 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
   };
 
   const handleShareClick = () => {
+    const uniqueURL = `${window.location.origin}/play/${character.id}`;
+    
     if (navigator.share) {
       navigator.share({
         title: `Character #${character.id}`,
         text: `Check out this amazing character conversation: ${character.goal}`,
-        url: window.location.href,
+        url: uniqueURL,
       }).catch((error) => console.log('Error sharing:', error));
     } else {
       // Fallback for browsers that don't support Web Share API
-      navigator.clipboard.writeText(window.location.href);
-      // You could add a toast notification here
-      console.log('Link copied to clipboard');
+      navigator.clipboard.writeText(uniqueURL).then(() => {
+        console.log('Character URL copied to clipboard');
+        // You could add a toast notification here
+      }).catch(() => {
+        console.log('Failed to copy URL');
+      });
     }
   };
 
@@ -191,13 +196,29 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
 
                   {/* Goal Section with Flip Animation */}
                   <div 
-                    className="relative preserve-3d"
+                    className="relative"
                     onMouseEnter={() => setIsGoalFlipped(true)}
                     onMouseLeave={() => setIsGoalFlipped(false)}
+                    style={{ 
+                      perspective: '1000px',
+                      height: '160px' // Fixed height to prevent layout shift
+                    }}
                   >
-                    <div className={`bg-gradient-to-r from-blue-50/60 to-indigo-50/60 rounded-2xl p-6 border border-zinc-200/30 cursor-pointer transition-all duration-500 ${isGoalFlipped ? 'rotate-y-180' : ''}`}>
+                    <div 
+                      className="relative w-full h-full transition-transform duration-500 preserve-3d cursor-pointer"
+                      style={{ 
+                        transformStyle: 'preserve-3d',
+                        transform: isGoalFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)'
+                      }}
+                    >
                       {/* Front Side - Goal and Progress */}
-                      <div className={`${isGoalFlipped ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300 backface-hidden`}>
+                      <div 
+                        className="absolute inset-0 bg-gradient-to-r from-blue-50/60 to-indigo-50/60 rounded-2xl p-6 border border-zinc-200/30"
+                        style={{ 
+                          backfaceVisibility: 'hidden',
+                          transform: 'rotateY(0deg)'
+                        }}
+                      >
                         <div className="flex items-start justify-between mb-4">
                           <div>
                             <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
@@ -227,7 +248,13 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
                       </div>
 
                       {/* Back Side - Character Description */}
-                      <div className={`absolute inset-0 p-6 ${isGoalFlipped ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300 backface-hidden rotate-y-180`}>
+                      <div 
+                        className="absolute inset-0 bg-gradient-to-r from-purple-50/60 to-pink-50/60 rounded-2xl p-6 border border-zinc-200/30"
+                        style={{ 
+                          backfaceVisibility: 'hidden',
+                          transform: 'rotateY(180deg)'
+                        }}
+                      >
                         <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
                           Character Description
                         </p>
