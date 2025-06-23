@@ -1,9 +1,9 @@
+
 import { Card } from "@/types/Card";
 import { useState, useRef, useEffect } from "react";
-import { MessageCircle, ArrowLeft, Send } from "lucide-react";
+import { MessageCircle, ArrowLeft, Send, Share } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 
 interface CharacterCardProps {
   character: Card;
@@ -15,6 +15,7 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Array<{text: string, isUser: boolean}>>([]);
   const [progress] = useState(65); // Simulated progress
+  const [isGoalFlipped, setIsGoalFlipped] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const handleCardClick = () => {
@@ -41,6 +42,21 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
+    }
+  };
+
+  const handleShareClick = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: `Character #${character.id}`,
+        text: `Check out this amazing character conversation: ${character.goal}`,
+        url: window.location.href,
+      }).catch((error) => console.log('Error sharing:', error));
+    } else {
+      // Fallback for browsers that don't support Web Share API
+      navigator.clipboard.writeText(window.location.href);
+      // You could add a toast notification here
+      console.log('Link copied to clipboard');
     }
   };
 
@@ -132,11 +148,19 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
                 <ArrowLeft size={18} />
               </Button>
 
+              {/* Share Button */}
+              <Button
+                onClick={handleShareClick}
+                className="absolute top-6 right-6 w-12 h-12 p-0 bg-white/80 hover:bg-white border border-zinc-200/50 text-zinc-600 hover:text-zinc-800 rounded-full transition-all duration-300 hover:scale-105 z-10"
+              >
+                <Share size={18} />
+              </Button>
+
               {/* Character Profile Section */}
               <div className="flex items-start gap-8 max-w-5xl mx-auto">
                 {/* Character Portrait - Made Larger */}
                 <div className="relative flex-shrink-0">
-                  <div className="w-32 h-32 rounded-3xl overflow-hidden bg-gradient-to-br from-zinc-100 to-zinc-200 shadow-lg">
+                  <div className="w-40 h-40 rounded-3xl overflow-hidden bg-gradient-to-br from-zinc-100 to-zinc-200 shadow-lg">
                     <img
                       src={character.image_url}
                       alt={`Character ${character.id}`}
@@ -165,10 +189,15 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
                     </div>
                   </div>
 
-                  {/* Goal Section with Hover for Description */}
-                  <HoverCard>
-                    <HoverCardTrigger asChild>
-                      <div className="bg-gradient-to-r from-blue-50/60 to-indigo-50/60 rounded-2xl p-6 border border-zinc-200/30 cursor-pointer hover:bg-gradient-to-r hover:from-blue-50/80 hover:to-indigo-50/80 transition-all duration-300">
+                  {/* Goal Section with Flip Animation */}
+                  <div 
+                    className="relative preserve-3d"
+                    onMouseEnter={() => setIsGoalFlipped(true)}
+                    onMouseLeave={() => setIsGoalFlipped(false)}
+                  >
+                    <div className={`bg-gradient-to-r from-blue-50/60 to-indigo-50/60 rounded-2xl p-6 border border-zinc-200/30 cursor-pointer transition-all duration-500 ${isGoalFlipped ? 'rotate-y-180' : ''}`}>
+                      {/* Front Side - Goal and Progress */}
+                      <div className={`${isGoalFlipped ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300 backface-hidden`}>
                         <div className="flex items-start justify-between mb-4">
                           <div>
                             <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
@@ -196,18 +225,18 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
                           />
                         </div>
                       </div>
-                    </HoverCardTrigger>
-                    <HoverCardContent className="w-80 p-4 bg-white/95 backdrop-blur-xl border border-zinc-200/50 shadow-xl rounded-2xl">
-                      <div className="space-y-3">
-                        <h4 className="text-sm font-medium text-zinc-900 uppercase tracking-wider">
+
+                      {/* Back Side - Character Description */}
+                      <div className={`absolute inset-0 p-6 ${isGoalFlipped ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300 backface-hidden rotate-y-180`}>
+                        <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
                           Character Description
-                        </h4>
-                        <p className="text-sm font-light text-zinc-600 leading-relaxed">
+                        </p>
+                        <p className="text-lg font-light text-zinc-700 leading-relaxed">
                           {character.description || "A thoughtful companion ready to help you achieve your goals through meaningful conversations and gentle guidance."}
                         </p>
                       </div>
-                    </HoverCardContent>
-                  </HoverCard>
+                    </div>
+                  </div>
 
                   {/* Personality Traits */}
                   <div className="flex flex-wrap gap-2">
