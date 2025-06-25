@@ -1,9 +1,7 @@
-
 import { Card } from "@/types/Card";
 import { useState, useRef, useEffect } from "react";
 import { MessageCircle, ArrowLeft, Send, Share } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 
 interface CharacterCardProps {
   character: Card;
@@ -14,8 +12,6 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
   const [isFlipped, setIsFlipped] = useState(false);
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Array<{text: string, isUser: boolean}>>([]);
-  const [progress] = useState(65);
-  const [isGoalFlipped, setIsGoalFlipped] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -94,7 +90,6 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
     setMousePosition({ x: 0, y: 0 });
   };
 
-  // Handle click outside to close card
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (isFlipped && chatContainerRef.current && !chatContainerRef.current.contains(event.target as Node)) {
@@ -225,86 +220,113 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
         </div>
       )}
 
-      {/* Redesigned chat interface with Jony Ive philosophy */}
+      {/* Clean chat interface with character info integrated */}
       {isFlipped && (
         <div className={`fixed inset-0 z-50 bg-black/5 backdrop-blur-sm flex items-center justify-center transition-all duration-700 ${isAnimating ? 'animate-fade-in' : ''}`}>
           <div 
             ref={chatContainerRef}
-            className={`w-full max-w-4xl h-full max-h-[90vh] bg-white/95 backdrop-blur-2xl rounded-[2rem] shadow-3xl border border-white/30 flex flex-col overflow-hidden transition-all duration-700 ${isAnimating ? 'animate-scale-in' : ''}`}
+            className={`w-full max-w-3xl h-full max-h-[90vh] bg-white/95 backdrop-blur-2xl rounded-[2rem] shadow-3xl border border-white/30 flex flex-col overflow-hidden transition-all duration-700 ${isAnimating ? 'animate-scale-in' : ''}`}
           >
             
-            {/* Minimal header with character info */}
-            <div className="relative px-8 py-6 bg-white/40 backdrop-blur-xl border-b border-white/20">
-              {/* Back Button */}
+            {/* Minimal header with subtle controls */}
+            <div className="relative px-6 py-4 bg-white/40 backdrop-blur-xl border-b border-white/20 flex justify-between items-center">
               <Button
                 onClick={handleBackClick}
-                className="absolute top-6 left-6 w-10 h-10 p-0 bg-white/60 hover:bg-white/80 border-0 text-zinc-500 hover:text-zinc-700 rounded-full transition-all duration-300 backdrop-blur-sm"
+                className="w-9 h-9 p-0 bg-white/60 hover:bg-white/80 border-0 text-zinc-400 hover:text-zinc-600 rounded-full transition-all duration-300 backdrop-blur-sm"
               >
-                <ArrowLeft size={16} />
+                <ArrowLeft size={14} />
               </Button>
 
-              {/* Share Button */}
               <Button
                 onClick={handleShareClick}
-                className="absolute top-6 right-6 w-10 h-10 p-0 bg-white/60 hover:bg-white/80 border-0 text-zinc-500 hover:text-zinc-700 rounded-full transition-all duration-300 backdrop-blur-sm"
+                className="w-9 h-9 p-0 bg-white/60 hover:bg-white/80 border-0 text-zinc-400 hover:text-zinc-600 rounded-full transition-all duration-300 backdrop-blur-sm"
               >
-                <Share size={16} />
+                <Share size={14} />
               </Button>
-
-              {/* Centered character info */}
-              <div className="text-center">
-                <div className="inline-flex items-center gap-4 mb-2">
-                  <div className="w-12 h-12 rounded-2xl overflow-hidden bg-gradient-to-br from-zinc-100 to-zinc-200">
-                    <img
-                      src={character.image_url}
-                      alt={`Character ${character.id}`}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.src = `https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=100&h=100&fit=crop`;
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-light text-zinc-800 tracking-tight">
-                      Character #{character.id}
-                    </h2>
-                    <div className="flex items-center justify-center gap-2 mt-1">
-                      <div className="w-1.5 h-1.5 bg-green-400 rounded-full" />
-                      <span className="text-xs font-light text-zinc-500">Ready</span>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Character description - subtly placed */}
-                <p className="text-sm font-light text-zinc-600 max-w-md mx-auto leading-relaxed">
-                  {character.description || character.goal}
-                </p>
-              </div>
             </div>
 
-            {/* Chat area - the main focus */}
+            {/* Chat area with character info integrated */}
             <div className="flex-1 overflow-y-auto scrollbar-hide">
-              <div className="max-w-2xl mx-auto px-8 py-8">
+              <div className="max-w-2xl mx-auto px-6 py-8">
                 {messages.length === 0 ? (
-                  <div className="text-center py-20">
-                    <div className="w-12 h-12 bg-gradient-to-br from-zinc-100 to-zinc-200 rounded-2xl mx-auto mb-6 flex items-center justify-center">
-                      <MessageCircle size={16} className="text-zinc-400" />
+                  <div className="space-y-8">
+                    {/* Character introduction */}
+                    <div className="text-center">
+                      <div className="w-24 h-24 rounded-3xl overflow-hidden mx-auto mb-6 shadow-lg border border-white/30">
+                        <img
+                          src={character.image_url}
+                          alt={`Character ${character.id}`}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.src = `https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=200&h=200&fit=crop`;
+                          }}
+                        />
+                      </div>
+                      <h2 className="text-2xl font-extralight text-zinc-800 mb-3 tracking-tight">
+                        Character #{character.id}
+                      </h2>
+                      <div className="w-8 h-px bg-zinc-200 mx-auto mb-6" />
                     </div>
-                    <p className="text-lg font-extralight text-zinc-600 mb-2">Begin the conversation</p>
-                    <p className="text-sm font-light text-zinc-400 max-w-xs mx-auto leading-relaxed">
-                      Share your thoughts or ask about your goal
-                    </p>
+
+                    {/* Character description and goal */}
+                    <div className="space-y-6">
+                      {character.description && (
+                        <div className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-2xl p-6">
+                          <p className="text-base font-light text-zinc-700 leading-relaxed text-center">
+                            {character.description}
+                          </p>
+                        </div>
+                      )}
+                      
+                      <div className="bg-gradient-to-br from-zinc-50/80 to-white/60 backdrop-blur-sm border border-white/30 rounded-2xl p-6">
+                        <div className="text-center">
+                          <span className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-3 block">Goal</span>
+                          <p className="text-lg font-light text-zinc-800 leading-relaxed">
+                            {character.goal}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Conversation starter */}
+                    <div className="text-center pt-8">
+                      <div className="w-8 h-8 bg-gradient-to-br from-zinc-100 to-zinc-200 rounded-2xl mx-auto mb-4 flex items-center justify-center">
+                        <MessageCircle size={12} className="text-zinc-400" />
+                      </div>
+                      <p className="text-sm font-light text-zinc-500">
+                        Start the conversation below
+                      </p>
+                    </div>
                   </div>
                 ) : (
                   <div className="space-y-6">
+                    {/* Character info at top of conversation */}
+                    <div className="flex items-center gap-4 mb-8 pb-6 border-b border-zinc-100">
+                      <div className="w-12 h-12 rounded-2xl overflow-hidden bg-gradient-to-br from-zinc-100 to-zinc-200">
+                        <img
+                          src={character.image_url}
+                          alt={`Character ${character.id}`}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.src = `https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=100&h=100&fit=crop`;
+                          }}
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-sm font-medium text-zinc-700 mb-1">Character #{character.id}</h3>
+                        <p className="text-xs font-light text-zinc-500 leading-relaxed">{character.goal}</p>
+                      </div>
+                    </div>
+
+                    {/* Messages */}
                     {messages.map((msg, index) => (
                       <div key={index} className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-[75%] px-6 py-4 rounded-3xl transition-all duration-300 ${
+                        <div className={`max-w-[75%] px-5 py-4 rounded-3xl transition-all duration-300 ${
                           msg.isUser 
                             ? 'bg-zinc-900 text-white' 
                             : 'bg-white/80 backdrop-blur-sm border border-white/30 text-zinc-700'
                         }`}>
-                          <p className="text-base font-light leading-relaxed">{msg.text}</p>
+                          <p className="text-sm font-light leading-relaxed">{msg.text}</p>
                         </div>
                       </div>
                     ))}
@@ -313,8 +335,8 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
               </div>
             </div>
 
-            {/* Input area - clean and focused */}
-            <div className="px-8 py-6 bg-white/40 backdrop-blur-xl border-t border-white/20">
+            {/* Input area */}
+            <div className="px-6 py-5 bg-white/40 backdrop-blur-xl border-t border-white/20">
               <div className="max-w-2xl mx-auto">
                 <div className="flex gap-3 items-end">
                   <div className="flex-1 relative">
@@ -323,17 +345,17 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
                       onChange={(e) => setMessage(e.target.value)}
                       onKeyPress={handleKeyPress}
                       placeholder="Your message..."
-                      className="w-full px-6 py-4 bg-white/80 backdrop-blur-sm border border-white/30 rounded-3xl text-base font-light text-zinc-700 placeholder:text-zinc-400 resize-none focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50 transition-all duration-300"
+                      className="w-full px-5 py-3 bg-white/80 backdrop-blur-sm border border-white/30 rounded-3xl text-sm font-light text-zinc-700 placeholder:text-zinc-400 resize-none focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50 transition-all duration-300"
                       rows={1}
-                      style={{ minHeight: '52px', maxHeight: '120px' }}
+                      style={{ minHeight: '44px', maxHeight: '120px' }}
                     />
                   </div>
                   <Button
                     onClick={handleSendMessage}
                     disabled={!message.trim()}
-                    className="w-14 h-14 p-0 bg-zinc-900 hover:bg-zinc-700 disabled:bg-zinc-300 disabled:opacity-50 text-white rounded-3xl transition-all duration-300 flex items-center justify-center border-0"
+                    className="w-12 h-12 p-0 bg-zinc-900 hover:bg-zinc-700 disabled:bg-zinc-300 disabled:opacity-50 text-white rounded-3xl transition-all duration-300 flex items-center justify-center border-0"
                   >
-                    <Send size={18} />
+                    <Send size={16} />
                   </Button>
                 </div>
               </div>
