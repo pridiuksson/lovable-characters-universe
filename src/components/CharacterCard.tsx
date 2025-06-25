@@ -1,3 +1,4 @@
+
 import { Card } from "@/types/Card";
 import { useState, useRef, useEffect } from "react";
 import { MessageCircle, ArrowLeft, Send, Share } from "lucide-react";
@@ -17,16 +18,21 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
   const [isGoalFlipped, setIsGoalFlipped] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const handleCardClick = () => {
     console.log('Card clicked, flipping to chat interface');
+    setIsAnimating(true);
     setIsFlipped(true);
+    setTimeout(() => setIsAnimating(false), 800);
   };
 
   const handleBackClick = () => {
+    setIsAnimating(true);
     setIsFlipped(false);
+    setTimeout(() => setIsAnimating(false), 800);
   };
 
   const handleSendMessage = () => {
@@ -92,7 +98,7 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (isFlipped && chatContainerRef.current && !chatContainerRef.current.contains(event.target as Node)) {
-        setIsFlipped(false);
+        handleBackClick();
       }
     };
 
@@ -136,7 +142,7 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
         >
           <div 
             ref={cardRef}
-            className="w-full h-full cursor-pointer"
+            className={`w-full h-full cursor-pointer transition-all duration-700 ${isAnimating ? 'animate-scale-out opacity-0' : ''}`}
             onClick={handleCardClick}
             onMouseMove={handleMouseMove}
             onMouseEnter={handleMouseEnter}
@@ -219,202 +225,115 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
         </div>
       )}
 
-      {/* Full-screen chat interface when flipped */}
+      {/* Redesigned chat interface with Jony Ive philosophy */}
       {isFlipped && (
-        <div className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+        <div className={`fixed inset-0 z-50 bg-black/5 backdrop-blur-sm flex items-center justify-center transition-all duration-700 ${isAnimating ? 'animate-fade-in' : ''}`}>
           <div 
             ref={chatContainerRef}
-            className="w-full max-w-6xl h-full max-h-[95vh] bg-gradient-to-br from-white via-zinc-50 to-zinc-100 rounded-3xl shadow-3xl border border-zinc-200/50 flex flex-col overflow-hidden animate-scale-in"
+            className={`w-full max-w-4xl h-full max-h-[90vh] bg-white/95 backdrop-blur-2xl rounded-[2rem] shadow-3xl border border-white/30 flex flex-col overflow-hidden transition-all duration-700 ${isAnimating ? 'animate-scale-in' : ''}`}
           >
             
-            {/* Redesigned Header with Character Portrait */}
-            <div className="relative p-8 bg-white/70 backdrop-blur-xl border-b border-zinc-200/30">
+            {/* Minimal header with character info */}
+            <div className="relative px-8 py-6 bg-white/40 backdrop-blur-xl border-b border-white/20">
               {/* Back Button */}
               <Button
                 onClick={handleBackClick}
-                className="absolute top-6 left-6 w-12 h-12 p-0 bg-white/80 hover:bg-white border border-zinc-200/50 text-zinc-600 hover:text-zinc-800 rounded-full transition-all duration-300 hover:scale-105 z-10"
+                className="absolute top-6 left-6 w-10 h-10 p-0 bg-white/60 hover:bg-white/80 border-0 text-zinc-500 hover:text-zinc-700 rounded-full transition-all duration-300 backdrop-blur-sm"
               >
-                <ArrowLeft size={18} />
+                <ArrowLeft size={16} />
               </Button>
 
               {/* Share Button */}
               <Button
                 onClick={handleShareClick}
-                className="absolute top-6 right-6 w-12 h-12 p-0 bg-white/80 hover:bg-white border border-zinc-200/50 text-zinc-600 hover:text-zinc-800 rounded-full transition-all duration-300 hover:scale-105 z-10"
+                className="absolute top-6 right-6 w-10 h-10 p-0 bg-white/60 hover:bg-white/80 border-0 text-zinc-500 hover:text-zinc-700 rounded-full transition-all duration-300 backdrop-blur-sm"
               >
-                <Share size={18} />
+                <Share size={16} />
               </Button>
 
-              {/* Character Profile Section */}
-              <div className="flex items-start gap-8 max-w-5xl mx-auto">
-                {/* Character Portrait - Made Larger */}
-                <div className="relative flex-shrink-0">
-                  <div className="w-40 h-40 rounded-3xl overflow-hidden bg-gradient-to-br from-zinc-100 to-zinc-200 shadow-lg">
+              {/* Centered character info */}
+              <div className="text-center">
+                <div className="inline-flex items-center gap-4 mb-2">
+                  <div className="w-12 h-12 rounded-2xl overflow-hidden bg-gradient-to-br from-zinc-100 to-zinc-200">
                     <img
                       src={character.image_url}
                       alt={`Character ${character.id}`}
                       className="w-full h-full object-cover"
                       onError={(e) => {
-                        e.currentTarget.src = `https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=200&h=200&fit=crop`;
+                        e.currentTarget.src = `https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=100&h=100&fit=crop`;
                       }}
                     />
                   </div>
-                  {/* Subtle glow around portrait */}
-                  <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-white/20 to-transparent pointer-events-none" />
-                </div>
-
-                {/* Character Information */}
-                <div className="flex-1 space-y-6">
-                  {/* Header */}
                   <div>
-                    <h2 className="text-2xl font-extralight text-zinc-900 mb-2 tracking-tight">
+                    <h2 className="text-lg font-light text-zinc-800 tracking-tight">
                       Character #{character.id}
                     </h2>
-                    <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                      <span className="text-sm font-light text-zinc-500 uppercase tracking-wider">
-                        Ready to help
-                      </span>
+                    <div className="flex items-center justify-center gap-2 mt-1">
+                      <div className="w-1.5 h-1.5 bg-green-400 rounded-full" />
+                      <span className="text-xs font-light text-zinc-500">Ready</span>
                     </div>
                   </div>
+                </div>
+                
+                {/* Character description - subtly placed */}
+                <p className="text-sm font-light text-zinc-600 max-w-md mx-auto leading-relaxed">
+                  {character.description || character.goal}
+                </p>
+              </div>
+            </div>
 
-                  {/* Goal Section with Flip Animation */}
-                  <div 
-                    className="relative"
-                    onMouseEnter={() => setIsGoalFlipped(true)}
-                    onMouseLeave={() => setIsGoalFlipped(false)}
-                    style={{ 
-                      perspective: '1000px',
-                      height: '160px' // Fixed height to prevent layout shift
-                    }}
-                  >
-                    <div 
-                      className="relative w-full h-full transition-transform duration-500 preserve-3d cursor-pointer"
-                      style={{ 
-                        transformStyle: 'preserve-3d',
-                        transform: isGoalFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)'
-                      }}
-                    >
-                      {/* Front Side - Goal and Progress */}
-                      <div 
-                        className="absolute inset-0 bg-gradient-to-r from-blue-50/60 to-indigo-50/60 rounded-2xl p-6 border border-zinc-200/30"
-                        style={{ 
-                          backfaceVisibility: 'hidden',
-                          transform: 'rotateY(0deg)'
-                        }}
-                      >
-                        <div className="flex items-start justify-between mb-4">
-                          <div>
-                            <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
-                              Current Goal
-                            </p>
-                            <p className="text-lg font-light text-zinc-700 leading-relaxed">
-                              {character.goal}
-                            </p>
-                          </div>
-                        </div>
-                        
-                        {/* Progress Section */}
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
-                              Progress
-                            </span>
-                            <span className="text-sm font-light text-zinc-600">
-                              {progress}%
-                            </span>
-                          </div>
-                          <Progress 
-                            value={progress} 
-                            className="h-2 bg-white/60 border border-zinc-200/50" 
-                          />
-                        </div>
-                      </div>
-
-                      {/* Back Side - Character Description */}
-                      <div 
-                        className="absolute inset-0 bg-gradient-to-r from-purple-50/60 to-pink-50/60 rounded-2xl p-6 border border-zinc-200/30"
-                        style={{ 
-                          backfaceVisibility: 'hidden',
-                          transform: 'rotateY(180deg)'
-                        }}
-                      >
-                        <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
-                          Character Description
-                        </p>
-                        <p className="text-lg font-light text-zinc-700 leading-relaxed">
-                          {character.description || "A thoughtful companion ready to help you achieve your goals through meaningful conversations and gentle guidance."}
-                        </p>
-                      </div>
+            {/* Chat area - the main focus */}
+            <div className="flex-1 overflow-y-auto scrollbar-hide">
+              <div className="max-w-2xl mx-auto px-8 py-8">
+                {messages.length === 0 ? (
+                  <div className="text-center py-20">
+                    <div className="w-12 h-12 bg-gradient-to-br from-zinc-100 to-zinc-200 rounded-2xl mx-auto mb-6 flex items-center justify-center">
+                      <MessageCircle size={16} className="text-zinc-400" />
                     </div>
+                    <p className="text-lg font-extralight text-zinc-600 mb-2">Begin the conversation</p>
+                    <p className="text-sm font-light text-zinc-400 max-w-xs mx-auto leading-relaxed">
+                      Share your thoughts or ask about your goal
+                    </p>
                   </div>
-
-                  {/* Personality Traits */}
-                  <div className="flex flex-wrap gap-2">
-                    {['Supportive', 'Insightful', 'Patient'].map((trait) => (
-                      <div 
-                        key={trait}
-                        className="px-4 py-2 bg-white/60 backdrop-blur-sm border border-zinc-200/40 rounded-full text-xs font-light text-zinc-600 hover:bg-white/80 transition-colors duration-300"
-                      >
-                        {trait}
+                ) : (
+                  <div className="space-y-6">
+                    {messages.map((msg, index) => (
+                      <div key={index} className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-[75%] px-6 py-4 rounded-3xl transition-all duration-300 ${
+                          msg.isUser 
+                            ? 'bg-zinc-900 text-white' 
+                            : 'bg-white/80 backdrop-blur-sm border border-white/30 text-zinc-700'
+                        }`}>
+                          <p className="text-base font-light leading-relaxed">{msg.text}</p>
+                        </div>
                       </div>
                     ))}
                   </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Messages Area */}
-            <div className="flex-1 p-8 overflow-y-auto scrollbar-hide">
-              <div className="max-w-4xl mx-auto space-y-6">
-                {messages.length === 0 && (
-                  <div className="text-center py-20">
-                    <div className="inline-block p-8 rounded-3xl bg-gradient-to-br from-white/60 to-zinc-100/60 border border-zinc-200/50">
-                      <div className="w-16 h-16 bg-gradient-to-br from-zinc-200 to-zinc-300 rounded-full mx-auto mb-6 flex items-center justify-center">
-                        <MessageCircle size={20} className="text-zinc-500" />
-                      </div>
-                      <p className="text-xl font-extralight text-zinc-700 mb-3">Ready to begin</p>
-                      <p className="text-sm font-light text-zinc-500 leading-relaxed max-w-md">
-                        Share your thoughts, ask questions, or discuss your progress toward your goal
-                      </p>
-                    </div>
-                  </div>
                 )}
-                {messages.map((msg, index) => (
-                  <div key={index} className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[70%] p-6 rounded-3xl ${
-                      msg.isUser 
-                        ? 'bg-zinc-900 text-white' 
-                        : 'bg-white/80 backdrop-blur-sm border border-zinc-200/50 text-zinc-700'
-                    } transition-all duration-300 hover:scale-[1.02] shadow-sm`}>
-                      <p className="text-base font-light leading-relaxed">{msg.text}</p>
-                    </div>
-                  </div>
-                ))}
               </div>
             </div>
 
-            {/* Input Area */}
-            <div className="p-8 border-t border-zinc-200/30 bg-white/70 backdrop-blur-xl">
-              <div className="max-w-4xl mx-auto">
-                <div className="flex gap-4 items-end">
+            {/* Input area - clean and focused */}
+            <div className="px-8 py-6 bg-white/40 backdrop-blur-xl border-t border-white/20">
+              <div className="max-w-2xl mx-auto">
+                <div className="flex gap-3 items-end">
                   <div className="flex-1 relative">
                     <textarea
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
                       onKeyPress={handleKeyPress}
-                      placeholder="Share your thoughts..."
-                      className="w-full p-6 pr-16 bg-white/80 backdrop-blur-sm border border-zinc-200/50 rounded-3xl text-base font-light text-zinc-700 placeholder:text-zinc-400 resize-none focus:outline-none focus:ring-2 focus:ring-zinc-300/50 focus:border-transparent transition-all duration-300 shadow-sm"
+                      placeholder="Your message..."
+                      className="w-full px-6 py-4 bg-white/80 backdrop-blur-sm border border-white/30 rounded-3xl text-base font-light text-zinc-700 placeholder:text-zinc-400 resize-none focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50 transition-all duration-300"
                       rows={1}
-                      style={{ minHeight: '64px', maxHeight: '120px' }}
+                      style={{ minHeight: '52px', maxHeight: '120px' }}
                     />
                   </div>
                   <Button
                     onClick={handleSendMessage}
                     disabled={!message.trim()}
-                    className="w-16 h-16 p-0 bg-zinc-900 hover:bg-zinc-800 disabled:bg-zinc-300 disabled:opacity-50 text-white rounded-3xl transition-all duration-300 flex items-center justify-center hover:scale-105 shadow-lg"
+                    className="w-14 h-14 p-0 bg-zinc-900 hover:bg-zinc-700 disabled:bg-zinc-300 disabled:opacity-50 text-white rounded-3xl transition-all duration-300 flex items-center justify-center border-0"
                   >
-                    <Send size={20} />
+                    <Send size={18} />
                   </Button>
                 </div>
               </div>
