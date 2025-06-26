@@ -4,6 +4,8 @@ import { MessageCircle, ArrowLeft, Send, Share } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarImage } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface CharacterCardProps {
   character: Card;
@@ -236,111 +238,111 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
         </div>
       )}
 
-      {/* Redesigned chat interface */}
+      {/* Larger chat interface */}
       {isFlipped && (
-        <div className={`fixed inset-0 z-50 bg-black/5 backdrop-blur-sm flex items-center justify-center transition-all duration-700 ${isAnimating ? 'animate-fade-in' : ''}`}>
+        <div className={`fixed inset-0 z-50 bg-black/20 backdrop-blur flex items-center justify-center transition-all duration-700 ${isAnimating ? 'animate-fade-in' : ''}`}>
           <div 
             ref={chatContainerRef}
-            className={`w-full max-w-2xl h-full max-h-[85vh] bg-white/95 backdrop-blur-2xl rounded-[2rem] shadow-3xl border border-white/30 flex flex-col overflow-hidden transition-all duration-700 ${isAnimating ? 'animate-scale-in' : ''}`}
+            className={`w-full max-w-4xl h-full max-h-[90vh] bg-white/95 backdrop-blur-xl rounded-3xl shadow-3xl border border-white/20 flex flex-col overflow-hidden transition-all duration-700 ${isAnimating ? 'animate-scale-in' : ''}`}
           >
             
-            {/* Minimal header */}
-            <div className="relative px-6 py-4 bg-white/40 backdrop-blur-xl border-b border-white/20 flex justify-between items-center">
+            {/* Clean header */}
+            <div className="flex items-center justify-between p-6 border-b border-zinc-100">
               <Button
                 onClick={handleBackClick}
-                className="w-9 h-9 p-0 bg-white/60 hover:bg-white/80 border-0 text-zinc-400 hover:text-zinc-600 rounded-full transition-all duration-300 backdrop-blur-sm"
+                variant="ghost"
+                size="sm"
+                className="rounded-full h-8 w-8 p-0"
               >
-                <ArrowLeft size={14} />
+                <ArrowLeft size={16} />
               </Button>
 
-              <div className="text-xs font-light text-zinc-500 tracking-wider uppercase">
+              <div className="text-xs font-medium text-zinc-400 tracking-wider uppercase">
                 Character #{character.id}
               </div>
 
               <Button
                 onClick={handleShareClick}
-                className="w-9 h-9 p-0 bg-white/60 hover:bg-white/80 border-0 text-zinc-400 hover:text-zinc-600 rounded-full transition-all duration-300 backdrop-blur-sm"
+                variant="ghost"
+                size="sm"
+                className="rounded-full h-8 w-8 p-0"
               >
-                <Share size={14} />
+                <Share size={16} />
               </Button>
             </div>
 
-            {/* Progress bar with metallic appearance */}
-            <div className="px-6 py-1 bg-white/20 backdrop-blur-xl">
+            {/* Metallic progress bar */}
+            <div className="px-6">
               <Progress 
                 value={progress} 
-                className="h-0.5 bg-gradient-to-r from-zinc-200/50 to-zinc-300/50"
+                className="h-px bg-gradient-to-r from-zinc-200 via-zinc-300 to-zinc-200"
               />
             </div>
 
-            {/* Chat messages area */}
-            <div className="flex-1 overflow-y-auto scrollbar-hide">
-              <div className="px-6 py-6 space-y-6">
+            {/* Chat messages area with ScrollArea */}
+            <ScrollArea className="flex-1 px-6 py-6">
+              <div className="space-y-6">
                 {messages.map((msg, index) => (
                   <div key={index} className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}>
                     {msg.isCharacterIntro ? (
-                      // Character introduction message with image
-                      <div className="max-w-[85%] space-y-4">
-                        <div className="flex items-start gap-4 p-6 bg-gradient-to-br from-white/80 to-white/60 backdrop-blur-sm border border-white/40 rounded-3xl">
-                          <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gradient-to-br from-zinc-100 to-zinc-200 flex-shrink-0">
-                            <img
-                              src={character.image_url}
-                              alt={`Character ${character.id}`}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                e.currentTarget.src = `https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=100&h=100&fit=crop`;
-                              }}
-                            />
-                          </div>
-                          <div className="flex-1 space-y-3">
-                            {character.description && (
-                              <p className="text-base font-light text-zinc-800 leading-relaxed">
-                                {character.description}
-                              </p>
-                            )}
-                            <Separator className="bg-zinc-200/60" />
-                            <div>
-                              <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider block mb-2">Goal</span>
-                              <p className="text-sm font-light text-zinc-700 leading-relaxed">
-                                {character.goal}
-                              </p>
-                            </div>
+                      <div className="flex items-start gap-4 max-w-full">
+                        <Avatar className="w-16 h-16 flex-shrink-0">
+                          <AvatarImage
+                            src={character.image_url}
+                            alt={`Character ${character.id}`}
+                            onError={(e) => {
+                              e.currentTarget.src = `https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=100&h=100&fit=crop`;
+                            }}
+                          />
+                        </Avatar>
+                        <div className="flex-1 space-y-3">
+                          {character.description && (
+                            <p className="text-base text-zinc-700 leading-relaxed">
+                              {character.description}
+                            </p>
+                          )}
+                          <Separator className="bg-zinc-200" />
+                          <div>
+                            <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider block mb-2">Goal</span>
+                            <p className="text-sm text-zinc-600 leading-relaxed">
+                              {character.goal}
+                            </p>
                           </div>
                         </div>
                       </div>
                     ) : (
-                      // Regular message bubbles
-                      <div className={`max-w-[75%] transition-all duration-300 ${
+                      <div className={`max-w-[75%] px-4 py-3 rounded-2xl transition-all duration-200 ${
                         msg.isUser 
-                          ? 'bg-zinc-900 text-white rounded-3xl px-6 py-4' 
-                          : 'bg-white/80 backdrop-blur-sm border border-white/40 text-zinc-700 rounded-3xl px-6 py-4'
+                          ? 'bg-zinc-900 text-white ml-4' 
+                          : 'bg-zinc-100 text-zinc-700 mr-4'
                       }`}>
-                        <p className="text-sm font-light leading-relaxed">{msg.text}</p>
+                        <p className="text-sm leading-relaxed">{msg.text}</p>
                       </div>
                     )}
                   </div>
                 ))}
               </div>
-            </div>
+            </ScrollArea>
 
             {/* Input area */}
-            <div className="px-6 py-5 bg-white/40 backdrop-blur-xl border-t border-white/20">
+            <div className="p-6 border-t border-zinc-100">
               <div className="flex gap-3 items-end">
-                <div className="flex-1 relative">
+                <div className="flex-1">
                   <textarea
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     onKeyPress={handleKeyPress}
-                    placeholder="Your message..."
-                    className="w-full px-6 py-4 bg-white/80 backdrop-blur-sm border border-white/40 rounded-3xl text-sm font-light text-zinc-700 placeholder:text-zinc-400 resize-none focus:outline-none focus:ring-2 focus:ring-white/60 focus:border-white/60 transition-all duration-300"
+                    placeholder="Type your message..."
+                    className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-2xl text-sm text-zinc-700 placeholder:text-zinc-400 resize-none focus:outline-none focus:ring-2 focus:ring-zinc-300 focus:border-zinc-300 transition-all duration-200"
                     rows={1}
-                    style={{ minHeight: '52px', maxHeight: '120px' }}
+                    style={{ minHeight: '48px', maxHeight: '120px' }}
                   />
                 </div>
                 <Button
                   onClick={handleSendMessage}
                   disabled={!message.trim()}
-                  className="w-12 h-12 p-0 bg-zinc-900 hover:bg-zinc-700 disabled:bg-zinc-300 disabled:opacity-50 text-white rounded-3xl transition-all duration-300 flex items-center justify-center border-0"
+                  size="sm"
+                  className="rounded-full h-12 w-12 p-0"
                 >
                   <Send size={16} />
                 </Button>
