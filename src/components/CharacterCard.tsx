@@ -2,6 +2,8 @@ import { Card } from "@/types/Card";
 import { useState, useRef, useEffect } from "react";
 import { MessageCircle, ArrowLeft, Send, Share } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
 
 interface CharacterCardProps {
   character: Card;
@@ -11,10 +13,11 @@ interface CharacterCardProps {
 const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
   const [isFlipped, setIsFlipped] = useState(false);
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState<Array<{text: string, isUser: boolean}>>([]);
+  const [messages, setMessages] = useState<Array<{text: string, isUser: boolean, isCharacterIntro?: boolean}>>([]);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [progress, setProgress] = useState(0);
   const cardRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
@@ -22,20 +25,33 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
     console.log('Card clicked, flipping to chat interface');
     setIsAnimating(true);
     setIsFlipped(true);
+    
+    // Initialize chat with character introduction
+    const introMessage = {
+      text: character.description || character.goal,
+      isUser: false,
+      isCharacterIntro: true
+    };
+    setMessages([introMessage]);
+    
     setTimeout(() => setIsAnimating(false), 800);
   };
 
   const handleBackClick = () => {
     setIsAnimating(true);
     setIsFlipped(false);
+    setMessages([]);
+    setProgress(0);
     setTimeout(() => setIsAnimating(false), 800);
   };
 
   const handleSendMessage = () => {
     if (message.trim()) {
       setMessages(prev => [...prev, { text: message, isUser: true }]);
+      setProgress(prev => Math.min(prev + 10, 100));
       setTimeout(() => {
         setMessages(prev => [...prev, { text: "I understand your message. Let me help you with that goal.", isUser: false }]);
+        setProgress(prev => Math.min(prev + 5, 100));
       }, 1000);
       setMessage("");
     }
@@ -220,15 +236,15 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
         </div>
       )}
 
-      {/* Clean chat interface with character info integrated */}
+      {/* Redesigned chat interface */}
       {isFlipped && (
         <div className={`fixed inset-0 z-50 bg-black/5 backdrop-blur-sm flex items-center justify-center transition-all duration-700 ${isAnimating ? 'animate-fade-in' : ''}`}>
           <div 
             ref={chatContainerRef}
-            className={`w-full max-w-3xl h-full max-h-[90vh] bg-white/95 backdrop-blur-2xl rounded-[2rem] shadow-3xl border border-white/30 flex flex-col overflow-hidden transition-all duration-700 ${isAnimating ? 'animate-scale-in' : ''}`}
+            className={`w-full max-w-2xl h-full max-h-[85vh] bg-white/95 backdrop-blur-2xl rounded-[2rem] shadow-3xl border border-white/30 flex flex-col overflow-hidden transition-all duration-700 ${isAnimating ? 'animate-scale-in' : ''}`}
           >
             
-            {/* Minimal header with subtle controls */}
+            {/* Minimal header */}
             <div className="relative px-6 py-4 bg-white/40 backdrop-blur-xl border-b border-white/20 flex justify-between items-center">
               <Button
                 onClick={handleBackClick}
@@ -236,6 +252,10 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
               >
                 <ArrowLeft size={14} />
               </Button>
+
+              <div className="text-xs font-light text-zinc-500 tracking-wider uppercase">
+                Character #{character.id}
+              </div>
 
               <Button
                 onClick={handleShareClick}
@@ -245,119 +265,85 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
               </Button>
             </div>
 
-            {/* Chat area with character info integrated */}
+            {/* Progress bar with metallic appearance */}
+            <div className="px-6 py-1 bg-white/20 backdrop-blur-xl">
+              <Progress 
+                value={progress} 
+                className="h-0.5 bg-gradient-to-r from-zinc-200/50 to-zinc-300/50"
+              />
+            </div>
+
+            {/* Chat messages area */}
             <div className="flex-1 overflow-y-auto scrollbar-hide">
-              <div className="max-w-2xl mx-auto px-6 py-8">
-                {messages.length === 0 ? (
-                  <div className="space-y-8">
-                    {/* Character introduction */}
-                    <div className="text-center">
-                      <div className="w-24 h-24 rounded-3xl overflow-hidden mx-auto mb-6 shadow-lg border border-white/30">
-                        <img
-                          src={character.image_url}
-                          alt={`Character ${character.id}`}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.currentTarget.src = `https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=200&h=200&fit=crop`;
-                          }}
-                        />
-                      </div>
-                      <h2 className="text-2xl font-extralight text-zinc-800 mb-3 tracking-tight">
-                        Character #{character.id}
-                      </h2>
-                      <div className="w-8 h-px bg-zinc-200 mx-auto mb-6" />
-                    </div>
-
-                    {/* Character description and goal */}
-                    <div className="space-y-6">
-                      {character.description && (
-                        <div className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-2xl p-6">
-                          <p className="text-base font-light text-zinc-700 leading-relaxed text-center">
-                            {character.description}
-                          </p>
-                        </div>
-                      )}
-                      
-                      <div className="bg-gradient-to-br from-zinc-50/80 to-white/60 backdrop-blur-sm border border-white/30 rounded-2xl p-6">
-                        <div className="text-center">
-                          <span className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-3 block">Goal</span>
-                          <p className="text-lg font-light text-zinc-800 leading-relaxed">
-                            {character.goal}
-                          </p>
+              <div className="px-6 py-6 space-y-6">
+                {messages.map((msg, index) => (
+                  <div key={index} className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}>
+                    {msg.isCharacterIntro ? (
+                      // Character introduction message with image
+                      <div className="max-w-[85%] space-y-4">
+                        <div className="flex items-start gap-4 p-6 bg-gradient-to-br from-white/80 to-white/60 backdrop-blur-sm border border-white/40 rounded-3xl">
+                          <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gradient-to-br from-zinc-100 to-zinc-200 flex-shrink-0">
+                            <img
+                              src={character.image_url}
+                              alt={`Character ${character.id}`}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.src = `https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=100&h=100&fit=crop`;
+                              }}
+                            />
+                          </div>
+                          <div className="flex-1 space-y-3">
+                            {character.description && (
+                              <p className="text-base font-light text-zinc-800 leading-relaxed">
+                                {character.description}
+                              </p>
+                            )}
+                            <Separator className="bg-zinc-200/60" />
+                            <div>
+                              <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider block mb-2">Goal</span>
+                              <p className="text-sm font-light text-zinc-700 leading-relaxed">
+                                {character.goal}
+                              </p>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-
-                    {/* Conversation starter */}
-                    <div className="text-center pt-8">
-                      <div className="w-8 h-8 bg-gradient-to-br from-zinc-100 to-zinc-200 rounded-2xl mx-auto mb-4 flex items-center justify-center">
-                        <MessageCircle size={12} className="text-zinc-400" />
+                    ) : (
+                      // Regular message bubbles
+                      <div className={`max-w-[75%] transition-all duration-300 ${
+                        msg.isUser 
+                          ? 'bg-zinc-900 text-white rounded-3xl px-6 py-4' 
+                          : 'bg-white/80 backdrop-blur-sm border border-white/40 text-zinc-700 rounded-3xl px-6 py-4'
+                      }`}>
+                        <p className="text-sm font-light leading-relaxed">{msg.text}</p>
                       </div>
-                      <p className="text-sm font-light text-zinc-500">
-                        Start the conversation below
-                      </p>
-                    </div>
+                    )}
                   </div>
-                ) : (
-                  <div className="space-y-6">
-                    {/* Character info at top of conversation */}
-                    <div className="flex items-center gap-4 mb-8 pb-6 border-b border-zinc-100">
-                      <div className="w-12 h-12 rounded-2xl overflow-hidden bg-gradient-to-br from-zinc-100 to-zinc-200">
-                        <img
-                          src={character.image_url}
-                          alt={`Character ${character.id}`}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.currentTarget.src = `https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=100&h=100&fit=crop`;
-                          }}
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="text-sm font-medium text-zinc-700 mb-1">Character #{character.id}</h3>
-                        <p className="text-xs font-light text-zinc-500 leading-relaxed">{character.goal}</p>
-                      </div>
-                    </div>
-
-                    {/* Messages */}
-                    {messages.map((msg, index) => (
-                      <div key={index} className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-[75%] px-5 py-4 rounded-3xl transition-all duration-300 ${
-                          msg.isUser 
-                            ? 'bg-zinc-900 text-white' 
-                            : 'bg-white/80 backdrop-blur-sm border border-white/30 text-zinc-700'
-                        }`}>
-                          <p className="text-sm font-light leading-relaxed">{msg.text}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                ))}
               </div>
             </div>
 
             {/* Input area */}
             <div className="px-6 py-5 bg-white/40 backdrop-blur-xl border-t border-white/20">
-              <div className="max-w-2xl mx-auto">
-                <div className="flex gap-3 items-end">
-                  <div className="flex-1 relative">
-                    <textarea
-                      value={message}
-                      onChange={(e) => setMessage(e.target.value)}
-                      onKeyPress={handleKeyPress}
-                      placeholder="Your message..."
-                      className="w-full px-5 py-3 bg-white/80 backdrop-blur-sm border border-white/30 rounded-3xl text-sm font-light text-zinc-700 placeholder:text-zinc-400 resize-none focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50 transition-all duration-300"
-                      rows={1}
-                      style={{ minHeight: '44px', maxHeight: '120px' }}
-                    />
-                  </div>
-                  <Button
-                    onClick={handleSendMessage}
-                    disabled={!message.trim()}
-                    className="w-12 h-12 p-0 bg-zinc-900 hover:bg-zinc-700 disabled:bg-zinc-300 disabled:opacity-50 text-white rounded-3xl transition-all duration-300 flex items-center justify-center border-0"
-                  >
-                    <Send size={16} />
-                  </Button>
+              <div className="flex gap-3 items-end">
+                <div className="flex-1 relative">
+                  <textarea
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Your message..."
+                    className="w-full px-6 py-4 bg-white/80 backdrop-blur-sm border border-white/40 rounded-3xl text-sm font-light text-zinc-700 placeholder:text-zinc-400 resize-none focus:outline-none focus:ring-2 focus:ring-white/60 focus:border-white/60 transition-all duration-300"
+                    rows={1}
+                    style={{ minHeight: '52px', maxHeight: '120px' }}
+                  />
                 </div>
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={!message.trim()}
+                  className="w-12 h-12 p-0 bg-zinc-900 hover:bg-zinc-700 disabled:bg-zinc-300 disabled:opacity-50 text-white rounded-3xl transition-all duration-300 flex items-center justify-center border-0"
+                >
+                  <Send size={16} />
+                </Button>
               </div>
             </div>
           </div>
