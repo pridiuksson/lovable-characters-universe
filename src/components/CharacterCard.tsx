@@ -172,58 +172,33 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
             
             {/* Main card container */}
             <div className="relative w-full h-full rounded-3xl overflow-hidden shadow-2xl border border-white/20">
-              {/* Complex holographic background */}
-              <div className="absolute inset-0 bg-gradient-to-br from-white/90 via-zinc-50/80 to-zinc-100/90" />
-              <div className="absolute inset-0 bg-gradient-to-tr from-purple-100/30 via-blue-50/40 to-violet-100/30" />
-              <div className="absolute inset-0 bg-gradient-to-bl from-pink-100/20 via-transparent to-cyan-100/20" />
+              {/* Character image - now full card */}
+              <div className="absolute inset-0">
+                <img
+                  src={character.image_url}
+                  alt={`Character ${character.id}`}
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  onError={(e) => {
+                    console.error('Image failed to load:', character.image_url);
+                    e.currentTarget.src = `https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=400&h=600&fit=crop`;
+                  }}
+                />
+              </div>
+              
+              {/* Gradient overlay for text readability */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
               
               {/* Dynamic shine layer */}
               <div 
-                className="absolute inset-0 opacity-60"
+                className="absolute inset-0 opacity-40"
                 style={shineStyle}
               />
               
-              {/* Metallic glare layer */}
-              <div 
-                className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-white/5 opacity-80"
-                style={{
-                  transform: `translateX(${mousePosition.x * -15}px) translateY(${mousePosition.y * -15}px)`,
-                  transition: 'transform 0.2s ease-out',
-                }}
-              />
-              
-              {/* Content container */}
-              <div className="relative w-full h-full p-6 flex flex-col">
-                {/* Character image */}
-                <div className="relative flex-1 rounded-2xl overflow-hidden mb-6">
-                  <img
-                    src={character.image_url}
-                    alt={`Character ${character.id}`}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                    onError={(e) => {
-                      console.error('Image failed to load:', character.image_url);
-                      e.currentTarget.src = `https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=400&h=600&fit=crop`;
-                    }}
-                  />
-                  
-                  {/* Image overlay gradients */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
-                  <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent" />
-                </div>
-                
-                {/* Goal text with vertical gradient */}
-                <div className="relative">
-                  <p 
-                    className="text-sm font-light leading-relaxed line-clamp-3 bg-gradient-to-b from-zinc-800 via-zinc-700 to-zinc-600 bg-clip-text text-transparent"
-                    style={{
-                      backgroundImage: 'linear-gradient(to bottom, #27272a 0%, #3f3f46 50%, #52525b 100%)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                    }}
-                  >
-                    {character.goal}
-                  </p>
-                </div>
+              {/* Goal text overlay at bottom */}
+              <div className="absolute bottom-0 left-0 right-0 p-6">
+                <p className="text-white text-sm font-light leading-relaxed line-clamp-3 drop-shadow-lg">
+                  {character.goal}
+                </p>
               </div>
               
               {/* Chat indicator */}
@@ -243,7 +218,7 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
         <div className={`fixed inset-0 z-50 bg-black/20 backdrop-blur flex items-center justify-center transition-all duration-700 ${isAnimating ? 'animate-fade-in' : ''}`}>
           <div 
             ref={chatContainerRef}
-            className={`w-full max-w-4xl h-full max-h-[90vh] bg-white/95 backdrop-blur-xl rounded-3xl shadow-3xl border border-white/20 flex flex-col overflow-hidden transition-all duration-700 ${isAnimating ? 'animate-scale-in' : ''}`}
+            className={`w-full max-w-5xl h-full max-h-[95vh] bg-white/95 backdrop-blur-xl rounded-3xl shadow-3xl border border-white/20 flex flex-col overflow-hidden transition-all duration-700 ${isAnimating ? 'animate-scale-in' : ''}`}
           >
             
             {/* Clean header */}
@@ -285,8 +260,8 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
                 {messages.map((msg, index) => (
                   <div key={index} className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}>
                     {msg.isCharacterIntro ? (
-                      <div className="flex items-start gap-4 max-w-full">
-                        <Avatar className="w-16 h-16 flex-shrink-0">
+                      <div className="flex items-start gap-6 max-w-full">
+                        <Avatar className="w-24 h-24 flex-shrink-0 ring-2 ring-zinc-200">
                           <AvatarImage
                             src={character.image_url}
                             alt={`Character ${character.id}`}
@@ -295,16 +270,16 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
                             }}
                           />
                         </Avatar>
-                        <div className="flex-1 space-y-3">
+                        <div className="flex-1 space-y-4">
                           {character.description && (
-                            <p className="text-base text-zinc-700 leading-relaxed">
+                            <p className="text-lg text-zinc-700 leading-relaxed">
                               {character.description}
                             </p>
                           )}
                           <Separator className="bg-zinc-200" />
                           <div>
-                            <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider block mb-2">Goal</span>
-                            <p className="text-sm text-zinc-600 leading-relaxed">
+                            <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider block mb-3">Goal</span>
+                            <p className="text-base text-zinc-600 leading-relaxed">
                               {character.goal}
                             </p>
                           </div>
