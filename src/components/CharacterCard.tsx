@@ -1,5 +1,6 @@
+
 import { Card } from "@/types/Card";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { MessageCircle, ArrowLeft, Send, Share } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -16,16 +17,13 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
   const [isFlipped, setIsFlipped] = useState(false);
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Array<{text: string, isUser: boolean, isCharacterIntro?: boolean}>>([]);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(false);
   const [progress, setProgress] = useState(0);
   const cardRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const handleCardClick = () => {
     console.log('Card clicked, flipping to chat interface');
-    setIsAnimating(true);
     setIsFlipped(true);
     
     // Initialize chat with character introduction
@@ -35,16 +33,12 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
       isCharacterIntro: true
     };
     setMessages([introMessage]);
-    
-    setTimeout(() => setIsAnimating(false), 800);
   };
 
   const handleBackClick = () => {
-    setIsAnimating(true);
     setIsFlipped(false);
     setMessages([]);
     setProgress(0);
-    setTimeout(() => setIsAnimating(false), 800);
   };
 
   const handleSendMessage = () => {
@@ -84,29 +78,13 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
     }
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!cardRef.current) return;
-    
-    const rect = cardRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
-    
-    setMousePosition({
-      x: (x - centerX) / centerX,
-      y: (y - centerY) / centerY
-    });
-  };
-
-  const handleMouseEnter = () => {
+  const handleMouseEnter = useCallback(() => {
     setIsHovered(true);
-  };
+  }, []);
 
-  const handleMouseLeave = () => {
+  const handleMouseLeave = useCallback(() => {
     setIsHovered(false);
-    setMousePosition({ x: 0, y: 0 });
-  };
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -124,30 +102,9 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
     };
   }, [isFlipped]);
 
-  const tiltStyle = {
-    transform: `perspective(1000px) rotateX(${mousePosition.y * -10}deg) rotateY(${mousePosition.x * 10}deg) scale(${isHovered ? 1.05 : 1})`,
-    transition: isHovered ? 'transform 0.1s ease-out' : 'transform 0.3s ease-out',
-  };
-
-  const shineStyle = {
-    background: `linear-gradient(
-      ${mousePosition.x * 90 + 45}deg,
-      transparent 0%,
-      rgba(255, 255, 255, 0.1) 20%,
-      rgba(255, 200, 150, 0.15) 30%,
-      rgba(255, 150, 200, 0.1) 40%,
-      rgba(150, 200, 255, 0.15) 50%,
-      rgba(200, 255, 150, 0.1) 60%,
-      rgba(255, 255, 255, 0.1) 80%,
-      transparent 100%
-    )`,
-    transform: `translateX(${mousePosition.x * 20}px) translateY(${mousePosition.y * 20}px)`,
-    transition: 'all 0.3s ease-out',
-  };
-
   return (
     <>
-      {/* Enhanced card when not flipped */}
+      {/* Simplified card when not flipped */}
       {!isFlipped && (
         <div 
           className={`relative group ${className}`}
@@ -155,21 +112,11 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
         >
           <div 
             ref={cardRef}
-            className={`w-full h-full cursor-pointer transition-all duration-700 ${isAnimating ? 'animate-scale-out opacity-0' : ''}`}
+            className="w-full h-full cursor-pointer transition-transform duration-300 hover:scale-105"
             onClick={handleCardClick}
-            onMouseMove={handleMouseMove}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
-            style={tiltStyle}
           >
-            {/* Outer glow container */}
-            <div className={`absolute inset-0 rounded-3xl transition-all duration-500 ${isHovered ? 'blur-xl opacity-20' : 'blur-lg opacity-0'}`} 
-                 style={{
-                   background: 'linear-gradient(135deg, rgba(147, 51, 234, 0.3), rgba(59, 130, 246, 0.3), rgba(168, 85, 247, 0.3))',
-                   transform: 'scale(1.1)',
-                 }} 
-            />
-            
             {/* Main card container */}
             <div className="relative w-full h-full rounded-3xl overflow-hidden shadow-2xl border border-white/20">
               {/* Character image - now full card */}
@@ -177,7 +124,7 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
                 <img
                   src={character.image_url}
                   alt={`Character ${character.id}`}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   onError={(e) => {
                     console.error('Image failed to load:', character.image_url);
                     e.currentTarget.src = `https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=400&h=600&fit=crop`;
@@ -188,12 +135,6 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
               {/* Gradient overlay for text readability */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
               
-              {/* Dynamic shine layer */}
-              <div 
-                className="absolute inset-0 opacity-40"
-                style={shineStyle}
-              />
-              
               {/* Goal text overlay at bottom */}
               <div className="absolute bottom-0 left-0 right-0 p-6">
                 <p className="text-white text-sm font-light leading-relaxed line-clamp-3 drop-shadow-lg">
@@ -202,23 +143,20 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
               </div>
               
               {/* Chat indicator */}
-              <div className={`absolute bottom-4 right-4 w-10 h-10 bg-white/80 backdrop-blur-sm rounded-full transition-all duration-500 ${isHovered ? 'opacity-100 scale-110' : 'opacity-0'} flex items-center justify-center border border-white/30 shadow-lg`}>
+              <div className={`absolute bottom-4 right-4 w-10 h-10 bg-white/80 backdrop-blur-sm rounded-full transition-all duration-300 ${isHovered ? 'opacity-100 scale-110' : 'opacity-0'} flex items-center justify-center border border-white/30 shadow-lg`}>
                 <MessageCircle size={16} className="text-zinc-600" />
               </div>
-              
-              {/* Subtle inner border */}
-              <div className="absolute inset-0 rounded-3xl border border-white/30 pointer-events-none" />
             </div>
           </div>
         </div>
       )}
 
-      {/* Larger chat interface */}
+      {/* Chat interface */}
       {isFlipped && (
-        <div className={`fixed inset-0 z-50 bg-black/20 backdrop-blur flex items-center justify-center transition-all duration-700 ${isAnimating ? 'animate-fade-in' : ''}`}>
+        <div className="fixed inset-0 z-50 bg-black/20 backdrop-blur flex items-center justify-center">
           <div 
             ref={chatContainerRef}
-            className={`w-full max-w-5xl h-full max-h-[95vh] bg-white/95 backdrop-blur-xl rounded-3xl shadow-3xl border border-white/20 flex flex-col overflow-hidden transition-all duration-700 ${isAnimating ? 'animate-scale-in' : ''}`}
+            className="w-full max-w-5xl h-full max-h-[95vh] bg-white/95 backdrop-blur-xl rounded-3xl shadow-3xl border border-white/20 flex flex-col overflow-hidden"
           >
             
             {/* Clean header */}
