@@ -6,6 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useToast } from "@/hooks/use-toast";
 
 interface CharacterCardProps {
   character: Card;
@@ -19,11 +20,13 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const [progress, setProgress] = useState(0);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const [isSharing, setIsSharing] = useState(false);
   
   const cardRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const mouseRef = useRef({ x: 0, y: 0 });
   const rafRef = useRef<number>();
+  const { toast } = useToast();
 
   // Memoized styles for better performance
   const cardStyles = useMemo(() => ({
@@ -110,24 +113,57 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
     }
   }, [handleSendMessage]);
 
-  const handleShareClick = useCallback(() => {
+  const handleShareClick = useCallback(async () => {
+    if (isSharing) return;
+    
+    setIsSharing(true);
     const uniqueURL = `${window.location.origin}/play/${character.id}`;
     
-    if (navigator.share) {
-      navigator.share({
-        title: `Character #${character.id}`,
-        text: `Check out this character: ${character.goal}`,
-        url: uniqueURL,
-      }).catch((error) => console.log('Error sharing:', error));
-    } else {
-      navigator.clipboard.writeText(uniqueURL).then(() => {
-        console.log('Character URL copied to clipboard');
-        // You could add a toast notification here if needed
-      }).catch(() => {
-        console.log('Failed to copy URL');
-      });
+    try {
+      // Try native sharing first (more elegant on mobile)
+      if (navigator.share) {
+        await navigator.share({
+          title: `Character #${character.id}`,
+          text: `Check out this character: ${character.goal}`,
+          url: uniqueURL,
+        });
+        
+        toast({
+          title: "Shared successfully",
+          description: "Character link has been shared",
+        });
+      } else {
+        // Fallback to clipboard with enhanced feedback
+        await navigator.clipboard.writeText(uniqueURL);
+        
+        toast({
+          title: "Link copied",
+          description: "Character URL copied to clipboard",
+        });
+      }
+    } catch (error) {
+      // Graceful error handling
+      console.log('Sharing failed:', error);
+      
+      // Last resort: try clipboard again
+      try {
+        await navigator.clipboard.writeText(uniqueURL);
+        toast({
+          title: "Link copied",
+          description: "Character URL copied to clipboard",
+        });
+      } catch (clipboardError) {
+        toast({
+          title: "Share failed",
+          description: "Unable to share character link",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      // Reset sharing state with slight delay for visual feedback
+      setTimeout(() => setIsSharing(false), 300);
     }
-  }, [character.id, character.goal]);
+  }, [character.id, character.goal, isSharing, toast]);
 
   // Optimized click outside handler
   useEffect(() => {
@@ -246,9 +282,17 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
                 onClick={handleShareClick}
                 variant="ghost"
                 size="sm"
-                className="rounded-full h-8 w-8 p-0 hover:bg-zinc-100"
+                disabled={isSharing}
+                className={`rounded-full h-8 w-8 p-0 hover:bg-zinc-100 transition-all duration-200 ${
+                  isSharing ? 'scale-95 opacity-70' : 'hover:scale-105'
+                }`}
               >
-                <Share size={16} />
+                <Share 
+                  size={16} 
+                  className={`transition-transform duration-200 ${
+                    isSharing ? 'animate-pulse' : ''
+                  }`} 
+                />
               </Button>
             </div>
 
