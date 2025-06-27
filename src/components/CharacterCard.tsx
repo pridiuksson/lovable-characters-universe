@@ -13,14 +13,26 @@ interface CharacterCardProps {
   className?: string;
 }
 
+interface ConversationMessage {
+  text: string;
+  isUser: boolean;
+  isCharacterIntro?: boolean;
+}
+
+interface ApiMessage {
+  role: "user" | "ai";
+  content: string;
+}
+
 const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
   const [isFlipped, setIsFlipped] = useState(false);
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState<Array<{text: string, isUser: boolean, isCharacterIntro?: boolean}>>([]);
+  const [messages, setMessages] = useState<ConversationMessage[]>([]);
   const [isHovered, setIsHovered] = useState(false);
   const [progress, setProgress] = useState(0);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const [isSharing, setIsSharing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   
   const cardRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -78,7 +90,7 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
     console.log('Card clicked, flipping to chat interface');
     setIsFlipped(true);
     
-    const introMessage = {
+    const introMessage: ConversationMessage = {
       text: character.description || character.goal,
       isUser: false,
       isCharacterIntro: true
@@ -92,19 +104,92 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
     setProgress(0);
   }, []);
 
-  const handleSendMessage = useCallback(() => {
-    if (!message.trim()) return;
+  // Convert conversation history to API format
+  const getConversationHistory = useCallback((): ApiMessage[] => {
+    return messages
+      .filter(msg => !msg.isCharacterIntro) // Exclude intro message
+      .slice(-6) // Keep last 6 messages for context
+      .map(msg => ({
+        role: msg.isUser ? "user" : "ai" as const,
+        content: msg.text
+      }));
+  }, [messages]);
+
+  const handleSendMessage = useCallback(async () => {
+    if (!message.trim() || isLoading) return;
     
-    setMessages(prev => [...prev, { text: message, isUser: true }]);
-    setProgress(prev => Math.min(prev + 10, 100));
-    
-    setTimeout(() => {
-      setMessages(prev => [...prev, { text: "I understand your message. Let me help you with that goal.", isUser: false }]);
-      setProgress(prev => Math.min(prev + 5, 100));
-    }, 1000);
-    
+    const userMessage = message.trim();
     setMessage("");
-  }, [message]);
+    setIsLoading(true);
+    
+    // Add user message to UI immediately
+    const newUserMessage: ConversationMessage = {
+      text: userMessage,
+      isUser: true
+    };
+    setMessages(prev => [...prev, newUserMessage]);
+    
+    // Add loading indicator
+    const loadingMessage: ConversationMessage = {
+      text: "...",
+      isUser: false
+    };
+    setMessages(prev => [...prev, loadingMessage]);
+    
+    try {
+      const conversationHistory = getConversationHistory();
+      
+      const response = await fetch('https://yevyfxmmijukjohbdjwv.supabase.co/functions/v1/play-turn', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          cardId: character.id.toString(),
+          userMessage: userMessage,
+          conversationHistory: conversationHistory
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      // Remove loading message and add AI response
+      setMessages(prev => {
+        const withoutLoading = prev.slice(0, -1);
+        return [...withoutLoading, {
+          text: data.aiResponse,
+          isUser: false
+        }];
+      });
+      
+      // Update progress
+      setProgress(prev => Math.min(prev + 10, 100));
+      
+    } catch (error) {
+      console.error('Error calling play-turn API:', error);
+      
+      // Remove loading message and show error
+      setMessages(prev => {
+        const withoutLoading = prev.slice(0, -1);
+        return [...withoutLoading, {
+          text: "Sorry, I'm having trouble connecting. Please try again.",
+          isUser: false
+        }];
+      });
+      
+      toast({
+        title: "Connection Error",
+        description: "Unable to send message. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [message, isLoading, character.id, getConversationHistory, toast]);
 
   const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -120,7 +205,6 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
     const uniqueURL = `${window.location.origin}/play/${character.id}`;
     
     try {
-      // Try native sharing first (more elegant on mobile)
       if (navigator.share) {
         await navigator.share({
           title: `Character #${character.id}`,
@@ -133,7 +217,6 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
           description: "Character link has been shared",
         });
       } else {
-        // Fallback to clipboard with enhanced feedback
         await navigator.clipboard.writeText(uniqueURL);
         
         toast({
@@ -142,10 +225,8 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
         });
       }
     } catch (error) {
-      // Graceful error handling
       console.log('Sharing failed:', error);
       
-      // Last resort: try clipboard again
       try {
         await navigator.clipboard.writeText(uniqueURL);
         toast({
@@ -160,7 +241,6 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
         });
       }
     } finally {
-      // Reset sharing state with slight delay for visual feedback
       setTimeout(() => setIsSharing(false), 300);
     }
   }, [character.id, character.goal, isSharing, toast]);
@@ -339,7 +419,9 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
                       <div className={`max-w-[75%] px-4 py-3 rounded-2xl transition-all duration-200 ${
                         msg.isUser 
                           ? 'bg-zinc-900 text-white ml-4' 
-                          : 'bg-zinc-100 text-zinc-700 mr-4'
+                          : msg.text === '...'
+                            ? 'bg-zinc-50 text-zinc-400 mr-4 animate-pulse'
+                            : 'bg-zinc-100 text-zinc-700 mr-4'
                       }`}>
                         <p className="text-sm leading-relaxed">{msg.text}</p>
                       </div>
@@ -358,14 +440,15 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
                     onChange={(e) => setMessage(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder="Type your message..."
-                    className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-2xl text-sm text-zinc-700 placeholder:text-zinc-400 resize-none focus:outline-none focus:ring-2 focus:ring-zinc-300 focus:border-zinc-300 transition-all duration-200"
+                    disabled={isLoading}
+                    className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-2xl text-sm text-zinc-700 placeholder:text-zinc-400 resize-none focus:outline-none focus:ring-2 focus:ring-zinc-300 focus:border-zinc-300 transition-all duration-200 disabled:opacity-50"
                     rows={1}
                     style={{ minHeight: '48px', maxHeight: '120px' }}
                   />
                 </div>
                 <Button
                   onClick={handleSendMessage}
-                  disabled={!message.trim()}
+                  disabled={!message.trim() || isLoading}
                   size="sm"
                   className="rounded-full h-12 w-12 p-0"
                 >
