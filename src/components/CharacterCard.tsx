@@ -1,4 +1,3 @@
-
 import { Card } from "@/types/Card";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { MessageCircle, ArrowLeft, Send, Share } from "lucide-react";
@@ -117,12 +116,13 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
     if (navigator.share) {
       navigator.share({
         title: `Character #${character.id}`,
-        text: `Check out this amazing character conversation: ${character.goal}`,
+        text: `Check out this character: ${character.goal}`,
         url: uniqueURL,
       }).catch((error) => console.log('Error sharing:', error));
     } else {
       navigator.clipboard.writeText(uniqueURL).then(() => {
         console.log('Character URL copied to clipboard');
+        // You could add a toast notification here if needed
       }).catch(() => {
         console.log('Failed to copy URL');
       });
