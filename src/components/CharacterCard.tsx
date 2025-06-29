@@ -19,11 +19,6 @@ interface ConversationMessage {
   isCharacterIntro?: boolean;
 }
 
-interface ApiMessage {
-  role: "user" | "ai";
-  content: string;
-}
-
 const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
   const [isFlipped, setIsFlipped] = useState(false);
   const [message, setMessage] = useState("");
@@ -33,6 +28,7 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const [isSharing, setIsSharing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoalAchieved, setIsGoalAchieved] = useState(false);
   
   const cardRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -104,17 +100,6 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
     setProgress(0);
   }, []);
 
-  // Convert conversation history to API format
-  const getConversationHistory = useCallback((): ApiMessage[] => {
-    return messages
-      .filter(msg => !msg.isCharacterIntro) // Exclude intro message
-      .slice(-6) // Keep last 6 messages for context
-      .map(msg => ({
-        role: msg.isUser ? "user" : "ai" as const,
-        content: msg.text
-      }));
-  }, [messages]);
-
   const handleSendMessage = useCallback(async () => {
     if (!message.trim() || isLoading) return;
     
@@ -137,17 +122,14 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
     setMessages(prev => [...prev, loadingMessage]);
     
     try {
-      const conversationHistory = getConversationHistory();
-      
       const response = await fetch('https://yevyfxmmijukjohbdjwv.supabase.co/functions/v1/play-turn', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          cardId: character.id.toString(),
-          userMessage: userMessage,
-          conversationHistory: conversationHistory
+          card_id: character.id.toString(),
+          user_message: userMessage
         }),
       });
 
@@ -157,17 +139,29 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
 
       const data = await response.json();
       
+      console.log('API Response:', data);
+      
       // Remove loading message and add AI response
       setMessages(prev => {
         const withoutLoading = prev.slice(0, -1);
         return [...withoutLoading, {
-          text: data.aiResponse,
+          text: data.ai_response,
           isUser: false
         }];
       });
       
       // Update progress
       setProgress(prev => Math.min(prev + 10, 100));
+      
+      // Check if goal is achieved
+      if (data.is_goal_achieved && !isGoalAchieved) {
+        setIsGoalAchieved(true);
+        setProgress(100);
+        toast({
+          title: "Goal Achieved! 🎉",
+          description: "You've successfully completed the character's objective!",
+        });
+      }
       
     } catch (error) {
       console.error('Error calling play-turn API:', error);
@@ -189,7 +183,7 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
     } finally {
       setIsLoading(false);
     }
-  }, [message, isLoading, character.id, getConversationHistory, toast]);
+  }, [message, isLoading, character.id, isGoalAchieved, toast]);
 
   const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -354,8 +348,15 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
                 <ArrowLeft size={16} />
               </Button>
 
-              <div className="text-xs font-medium text-zinc-400 tracking-wider uppercase">
-                Character #{character.id}
+              <div className="flex items-center gap-4">
+                <div className="text-xs font-medium text-zinc-400 tracking-wider uppercase">
+                  Character #{character.id}
+                </div>
+                {isGoalAchieved && (
+                  <div className="text-xs font-medium text-green-600 tracking-wider uppercase bg-green-100 px-2 py-1 rounded-full">
+                    Goal Achieved! 🎉
+                  </div>
+                )}
               </div>
 
               <Button
@@ -380,7 +381,7 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
             <div className="px-6">
               <Progress 
                 value={progress} 
-                className="h-px bg-gradient-to-r from-zinc-200 via-zinc-300 to-zinc-200"
+                className={`h-px ${isGoalAchieved ? 'bg-gradient-to-r from-green-200 via-green-300 to-green-200' : 'bg-gradient-to-r from-zinc-200 via-zinc-300 to-zinc-200'}`}
               />
             </div>
 
@@ -439,7 +440,7 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     onKeyPress={handleKeyPress}
-                    placeholder="Type your message..."
+                    placeholder={isGoalAchieved ? "Goal achieved! Continue chatting..." : "Type your message..."}
                     disabled={isLoading}
                     className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-2xl text-sm text-zinc-700 placeholder:text-zinc-400 resize-none focus:outline-none focus:ring-2 focus:ring-zinc-300 focus:border-zinc-300 transition-all duration-200 disabled:opacity-50"
                     rows={1}
