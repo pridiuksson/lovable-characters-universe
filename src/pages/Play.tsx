@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/types/Card";
 import CharacterCard from "@/components/CharacterCard";
+import CharacterMetaTags from "@/components/CharacterMetaTags";
 
 const fetchCharacters = async (): Promise<Card[]> => {
   const response = await fetch('https://yevyfxmmijukjohbdjwv.supabase.co/functions/v1/get-public-cards');
@@ -73,6 +74,7 @@ const Play = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-50 to-white relative overflow-hidden">
+      <CharacterMetaTags character={character} />
       {/* Ambient light effects - same as Index page */}
       <div className="absolute inset-0 bg-gradient-radial from-purple-100/30 via-transparent to-transparent opacity-60" />
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-100/20 rounded-full blur-3xl animate-pulse" />
