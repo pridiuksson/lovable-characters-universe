@@ -32,6 +32,8 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
   
   const cardRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const mouseRef = useRef({ x: 0, y: 0 });
   const rafRef = useRef<number>();
   const { toast } = useToast();
@@ -182,6 +184,10 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
       });
     } finally {
       setIsLoading(false);
+      // Restore focus to textarea after message is sent
+      setTimeout(() => {
+        textareaRef.current?.focus();
+      }, 100);
     }
   }, [message, isLoading, character.id, isGoalAchieved, toast]);
 
@@ -252,6 +258,22 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isFlipped, handleBackClick]);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (!isFlipped || messages.length === 0) return;
+    
+    // Scroll to bottom smoothly
+    const scrollElement = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+    if (scrollElement) {
+      setTimeout(() => {
+        scrollElement.scrollTo({
+          top: scrollElement.scrollHeight,
+          behavior: 'smooth'
+        });
+      }, 100);
+    }
+  }, [messages, isFlipped]);
 
   // Cleanup animation frame on unmount
   useEffect(() => {
@@ -386,7 +408,7 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
             </div>
 
             {/* Chat messages */}
-            <ScrollArea className="flex-1 px-6 py-6">
+            <ScrollArea ref={scrollAreaRef} className="flex-1 px-6 py-6">
               <div className="space-y-6">
                 {messages.map((msg, index) => (
                   <div key={index} className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}>
@@ -437,11 +459,11 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
               <div className="flex gap-3 items-end">
                 <div className="flex-1">
                   <textarea
+                    ref={textareaRef}
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder={isGoalAchieved ? "Goal achieved! Continue chatting..." : "Type your message..."}
-                    disabled={isLoading}
                     className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-2xl text-sm text-zinc-700 placeholder:text-zinc-400 resize-none focus:outline-none focus:ring-2 focus:ring-zinc-300 focus:border-zinc-300 transition-all duration-200 disabled:opacity-50"
                     rows={1}
                     style={{ minHeight: '48px', maxHeight: '120px' }}
