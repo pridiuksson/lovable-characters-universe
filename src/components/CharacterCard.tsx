@@ -349,11 +349,11 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
               </Button>
 
               <div className="flex items-center gap-4">
-                <div className="text-xs font-medium text-zinc-400 tracking-wider uppercase">
+                <div className="text-xs font-medium text-muted-foreground tracking-wider uppercase">
                   Character #{character.id}
                 </div>
                 {isGoalAchieved && (
-                  <div className="text-xs font-medium text-green-600 tracking-wider uppercase bg-green-100 px-2 py-1 rounded-full">
+                  <div className="text-xs font-semibold text-primary tracking-wider uppercase bg-primary/10 px-4 py-2 rounded-full border border-primary/20 shadow-sm">
                     Goal Achieved! 🎉
                   </div>
                 )}
