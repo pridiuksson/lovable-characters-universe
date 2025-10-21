@@ -413,8 +413,8 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
                 {messages.map((msg, index) => (
                   <div key={index} className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}>
                     {msg.isCharacterIntro ? (
-                      <div className="flex items-start gap-8 max-w-full">
-                        <Avatar className="w-32 h-32 flex-shrink-0 ring-4 ring-zinc-200 shadow-lg">
+                      <div className="flex flex-col items-center gap-6 max-w-full md:flex-row md:items-start md:gap-8">
+                        <Avatar className="w-40 h-40 flex-shrink-0 ring-4 ring-zinc-200 shadow-lg md:w-32 md:h-32">
                           <AvatarImage
                             src={character.image_url}
                             alt={`Character ${character.id}`}
@@ -423,9 +423,9 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
                             }}
                           />
                         </Avatar>
-                        <div className="flex-1 space-y-4">
+                        <div className="flex-1 space-y-4 w-full text-center md:text-left">
                           {character.description && (
-                            <p className="text-lg text-zinc-700 leading-relaxed">
+                            <p className="text-base text-zinc-700 leading-relaxed md:text-lg">
                               {character.description}
                             </p>
                           )}
