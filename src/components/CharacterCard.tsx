@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface CharacterCardProps {
   character: Card;
@@ -37,6 +38,7 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
   const mouseRef = useRef({ x: 0, y: 0 });
   const rafRef = useRef<number>();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   // Memoized styles for better performance
   const cardStyles = useMemo(() => ({
@@ -275,6 +277,19 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
     }
   }, [messages, isFlipped]);
 
+  // Auto-resize textarea based on content
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    
+    // Reset height to recalculate
+    textarea.style.height = 'auto';
+    
+    // Set to scrollHeight (content height), max 240px
+    const newHeight = Math.min(textarea.scrollHeight, 240);
+    textarea.style.height = `${newHeight}px`;
+  }, [message]);
+
   // Cleanup animation frame on unmount
   useEffect(() => {
     return () => {
@@ -413,8 +428,8 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
                 {messages.map((msg, index) => (
                   <div key={index} className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}>
                     {msg.isCharacterIntro ? (
-                      <div className="flex items-start gap-8 max-w-full">
-                        <Avatar className="w-32 h-32 flex-shrink-0 ring-4 ring-zinc-200 shadow-lg">
+                      <div className="flex flex-col items-center gap-6 max-w-full md:flex-row md:items-start md:gap-8">
+                        <Avatar className="w-40 h-40 flex-shrink-0 ring-4 ring-zinc-200 shadow-lg md:w-32 md:h-32">
                           <AvatarImage
                             src={character.image_url}
                             alt={`Character ${character.id}`}
@@ -423,9 +438,9 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
                             }}
                           />
                         </Avatar>
-                        <div className="flex-1 space-y-4">
+                        <div className="flex-1 space-y-4 w-full text-center md:text-left">
                           {character.description && (
-                            <p className="text-lg text-zinc-700 leading-relaxed">
+                            <p className="text-base text-zinc-700 leading-relaxed md:text-lg">
                               {character.description}
                             </p>
                           )}
@@ -466,7 +481,11 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
                     placeholder={isGoalAchieved ? "Goal achieved! Continue chatting..." : "Type your message..."}
                     className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-2xl text-sm text-zinc-700 placeholder:text-zinc-400 resize-none focus:outline-none focus:ring-2 focus:ring-zinc-300 focus:border-zinc-300 transition-all duration-200 disabled:opacity-50"
                     rows={1}
-                    style={{ minHeight: '48px', maxHeight: '120px' }}
+                    style={{ 
+                      minHeight: isMobile ? '120px' : '60px',
+                      maxHeight: '240px',
+                      overflowY: 'auto'
+                    }}
                   />
                 </div>
                 <Button
