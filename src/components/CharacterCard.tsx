@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface CharacterCardProps {
   character: Card;
@@ -37,6 +38,7 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
   const mouseRef = useRef({ x: 0, y: 0 });
   const rafRef = useRef<number>();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   // Memoized styles for better performance
   const cardStyles = useMemo(() => ({
@@ -275,6 +277,19 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
     }
   }, [messages, isFlipped]);
 
+  // Auto-resize textarea based on content
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    
+    // Reset height to recalculate
+    textarea.style.height = 'auto';
+    
+    // Set to scrollHeight (content height), max 240px
+    const newHeight = Math.min(textarea.scrollHeight, 240);
+    textarea.style.height = `${newHeight}px`;
+  }, [message]);
+
   // Cleanup animation frame on unmount
   useEffect(() => {
     return () => {
@@ -466,7 +481,11 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
                     placeholder={isGoalAchieved ? "Goal achieved! Continue chatting..." : "Type your message..."}
                     className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-2xl text-sm text-zinc-700 placeholder:text-zinc-400 resize-none focus:outline-none focus:ring-2 focus:ring-zinc-300 focus:border-zinc-300 transition-all duration-200 disabled:opacity-50"
                     rows={1}
-                    style={{ minHeight: '48px', maxHeight: '120px' }}
+                    style={{ 
+                      minHeight: isMobile ? '120px' : '60px',
+                      maxHeight: '240px',
+                      overflowY: 'auto'
+                    }}
                   />
                 </div>
                 <Button
