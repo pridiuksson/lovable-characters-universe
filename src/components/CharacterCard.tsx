@@ -406,7 +406,7 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
                 variant="ghost"
                 size="sm"
                 disabled={isSharing}
-                className={`rounded-full h-8 w-8 p-0 hover:bg-zinc-100 transition-all duration-200 hidden md:flex ${
+                className={`rounded-full h-8 w-8 p-0 hover:bg-zinc-100 transition-all duration-200 flex ${
                   isSharing ? 'scale-95 opacity-70' : 'hover:scale-105'
                 }`}
               >
@@ -420,10 +420,13 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
             </div>
 
             {/* Progress bar */}
-            <div className="px-3 md:px-6">
+            <div className="px-3 py-2 md:px-6 md:py-4 border-b border-zinc-50 bg-gradient-to-br from-zinc-50/50 to-transparent">
+              <p className="text-xs font-medium text-zinc-600 mb-1 md:mb-2 line-clamp-1 md:line-clamp-none">
+                Goal: {character.goal}
+              </p>
               <Progress 
                 value={progress} 
-                className={`h-2 md:h-px ${isGoalAchieved ? 'bg-gradient-to-r from-green-200 via-green-300 to-green-200' : 'bg-gradient-to-r from-zinc-200 via-zinc-300 to-zinc-200'}`}
+                className={`h-2 md:h-3 ${isGoalAchieved ? 'bg-gradient-to-r from-green-200 via-green-300 to-green-200' : ''}`}
               />
             </div>
 
