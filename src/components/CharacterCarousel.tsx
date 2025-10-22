@@ -51,12 +51,12 @@ const CharacterCarousel = ({ characters }: CharacterCarouselProps) => {
       {/* Character grid with premium spacing */}
       <div
         ref={scrollContainerRef}
-        className="flex gap-4 md:gap-8 overflow-x-auto scrollbar-hide pb-6 md:pb-8 px-4 md:px-16"
+        className="flex flex-col md:flex-row gap-4 md:gap-8 overflow-y-auto md:overflow-y-visible md:overflow-x-auto scrollbar-hide pb-6 md:pb-8 px-4 md:px-16"
       >
         {characters.map((character, index) => (
           <div
             key={character.id}
-            className="animate-fade-in flex-shrink-0"
+            className="animate-fade-in w-full md:w-auto md:flex-shrink-0"
             style={{ animationDelay: `${index * 100}ms` }}
           >
             <CharacterCard character={character} />

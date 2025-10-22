@@ -31,6 +31,8 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoalAchieved, setIsGoalAchieved] = useState(false);
   
+  const [touchStart, setTouchStart] = useState<{ x: number; y: number; time: number } | null>(null);
+  
   const cardRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -247,6 +249,36 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
     }
   }, [character.id, character.goal, isSharing, toast]);
 
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    setTouchStart({
+      x: touch.clientX,
+      y: touch.clientY,
+      time: Date.now()
+    });
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (!touchStart) return;
+    
+    const touch = e.changedTouches[0];
+    const deltaX = Math.abs(touch.clientX - touchStart.x);
+    const deltaY = Math.abs(touch.clientY - touchStart.y);
+    const deltaTime = Date.now() - touchStart.time;
+    
+    // Thresholds:
+    // - Movement < 10px = tap
+    // - Time < 300ms = quick tap
+    const isSwipe = deltaX > 10 || deltaY > 10;
+    const isTap = !isSwipe && deltaTime < 300;
+    
+    if (isTap) {
+      handleCardClick();
+    }
+    
+    setTouchStart(null);
+  }, [touchStart, handleCardClick]);
+
   // Optimized click outside handler
   useEffect(() => {
     if (!isFlipped) return;
@@ -317,6 +349,8 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
             className="w-full h-full cursor-pointer"
             style={cardStyles}
             onClick={handleCardClick}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
             onMouseMove={handleMouseMove}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
