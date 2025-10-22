@@ -1,8 +1,8 @@
 
 import { Card } from "@/types/Card";
 import CharacterCard from "./CharacterCard";
-import { useRef } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useRef, useState, useEffect } from "react";
+import { ChevronLeft, ChevronRight, ArrowUp } from "lucide-react";
 
 interface CharacterCarouselProps {
   characters: Card[];
@@ -10,6 +10,23 @@ interface CharacterCarouselProps {
 
 const CharacterCarousel = ({ characters }: CharacterCarouselProps) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 300);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
 
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
@@ -51,7 +68,7 @@ const CharacterCarousel = ({ characters }: CharacterCarouselProps) => {
       {/* Character grid with premium spacing */}
       <div
         ref={scrollContainerRef}
-        className="flex flex-col md:flex-row gap-4 md:gap-8 overflow-y-auto md:overflow-y-visible md:overflow-x-auto scrollbar-hide pb-6 md:pb-8 px-4 md:px-16"
+        className="flex flex-col md:flex-row gap-4 md:gap-8 overflow-y-auto md:overflow-y-visible md:overflow-x-auto scrollbar-hide pb-6 md:pb-8 px-4 md:px-16 items-center md:items-start"
       >
         {characters.map((character, index) => (
           <div
@@ -63,6 +80,17 @@ const CharacterCarousel = ({ characters }: CharacterCarouselProps) => {
           </div>
         ))}
       </div>
+
+      {/* Jump to top button - mobile only */}
+      {showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-8 right-4 z-50 w-12 h-12 bg-white/90 backdrop-blur-md rounded-full border border-zinc-200/50 shadow-lg md:hidden flex items-center justify-center hover:bg-white hover:scale-110 transition-all duration-300 animate-fade-in"
+          aria-label="Scroll to top"
+        >
+          <ArrowUp size={18} className="text-zinc-600" />
+        </button>
+      )}
     </div>
   );
 };
