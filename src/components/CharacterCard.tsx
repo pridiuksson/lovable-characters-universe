@@ -421,8 +421,8 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
 
             {/* Progress bar */}
             <div className="px-3 py-2 md:px-6 md:py-4 border-b border-zinc-50 bg-gradient-to-br from-zinc-50/50 to-transparent">
-              <p className="text-xs font-medium text-zinc-600 mb-1 md:mb-2 line-clamp-1 md:line-clamp-none">
-                Goal: {character.goal}
+              <p className="text-xs font-medium text-zinc-600 mb-1 md:mb-2">
+                Goal Progress
               </p>
               <Progress 
                 value={progress} 
