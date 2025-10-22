@@ -31,6 +31,8 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoalAchieved, setIsGoalAchieved] = useState(false);
   
+  const [touchStart, setTouchStart] = useState<{ x: number; y: number; time: number } | null>(null);
+  
   const cardRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -247,6 +249,36 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
     }
   }, [character.id, character.goal, isSharing, toast]);
 
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    setTouchStart({
+      x: touch.clientX,
+      y: touch.clientY,
+      time: Date.now()
+    });
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (!touchStart) return;
+    
+    const touch = e.changedTouches[0];
+    const deltaX = Math.abs(touch.clientX - touchStart.x);
+    const deltaY = Math.abs(touch.clientY - touchStart.y);
+    const deltaTime = Date.now() - touchStart.time;
+    
+    // Thresholds:
+    // - Movement < 10px = tap
+    // - Time < 300ms = quick tap
+    const isSwipe = deltaX > 10 || deltaY > 10;
+    const isTap = !isSwipe && deltaTime < 300;
+    
+    if (isTap) {
+      handleCardClick();
+    }
+    
+    setTouchStart(null);
+  }, [touchStart, handleCardClick]);
+
   // Optimized click outside handler
   useEffect(() => {
     if (!isFlipped) return;
@@ -305,13 +337,20 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
       {!isFlipped && (
         <div 
           className={`relative group ${className}`}
-          style={{ width: '320px', height: '480px' }}
+          style={{ 
+            width: isMobile ? 'calc(100vw - 32px)' : '320px',
+            height: isMobile ? 'calc((100vw - 32px) * 1.5)' : '480px',
+            maxWidth: isMobile ? '500px' : '320px',
+            maxHeight: isMobile ? '750px' : '480px'
+          }}
         >
           <div 
             ref={cardRef}
             className="w-full h-full cursor-pointer"
             style={cardStyles}
             onClick={handleCardClick}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
             onMouseMove={handleMouseMove}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
@@ -369,13 +408,13 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
 
       {/* Chat interface */}
       {isFlipped && (
-        <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm flex items-center justify-center p-0 md:p-4">
           <div 
             ref={chatContainerRef}
-            className="w-full max-w-6xl h-full max-h-[90vh] bg-white/95 backdrop-blur-xl rounded-3xl shadow-3xl border border-white/20 flex flex-col overflow-hidden"
+            className="w-full h-full bg-white/95 backdrop-blur-xl shadow-3xl border-white/20 flex flex-col overflow-hidden md:max-w-6xl md:max-h-[90vh] md:rounded-3xl md:border"
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-zinc-100">
+            <div className="flex items-center justify-between p-3 md:p-6 border-b border-zinc-100">
               <Button
                 onClick={handleBackClick}
                 variant="ghost"
@@ -386,7 +425,7 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
               </Button>
 
               <div className="flex items-center gap-4">
-                <div className="text-xs font-medium text-muted-foreground tracking-wider uppercase">
+                <div className="text-xs font-medium text-muted-foreground tracking-wider uppercase hidden md:block">
                   Character #{character.id}
                 </div>
                 {isGoalAchieved && (
@@ -401,7 +440,7 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
                 variant="ghost"
                 size="sm"
                 disabled={isSharing}
-                className={`rounded-full h-8 w-8 p-0 hover:bg-zinc-100 transition-all duration-200 ${
+                className={`rounded-full h-8 w-8 p-0 hover:bg-zinc-100 transition-all duration-200 flex ${
                   isSharing ? 'scale-95 opacity-70' : 'hover:scale-105'
                 }`}
               >
@@ -415,15 +454,18 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
             </div>
 
             {/* Progress bar */}
-            <div className="px-6">
+            <div className="px-3 py-2 md:px-6 md:py-4 border-b border-zinc-50 bg-gradient-to-br from-zinc-50/50 to-transparent">
+              <p className="text-xs font-medium text-zinc-600 mb-1 md:mb-2">
+                Goal Progress
+              </p>
               <Progress 
                 value={progress} 
-                className={`h-px ${isGoalAchieved ? 'bg-gradient-to-r from-green-200 via-green-300 to-green-200' : 'bg-gradient-to-r from-zinc-200 via-zinc-300 to-zinc-200'}`}
+                className={`h-2 md:h-3 ${isGoalAchieved ? 'bg-gradient-to-r from-green-200 via-green-300 to-green-200' : ''}`}
               />
             </div>
 
             {/* Chat messages */}
-            <ScrollArea ref={scrollAreaRef} className="flex-1 px-6 py-6">
+            <ScrollArea ref={scrollAreaRef} className="flex-1 px-3 py-3 md:px-6 md:py-6">
               <div className="space-y-6">
                 {messages.map((msg, index) => (
                   <div key={index} className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}>
@@ -454,7 +496,7 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
                         </div>
                       </div>
                     ) : (
-                      <div className={`max-w-[75%] px-4 py-3 rounded-2xl transition-all duration-200 ${
+                      <div className={`max-w-[90%] md:max-w-[75%] px-3 py-2 md:px-4 md:py-3 rounded-2xl transition-all duration-200 ${
                         msg.isUser 
                           ? 'bg-zinc-900 text-white ml-4' 
                           : msg.text === '...'
@@ -470,8 +512,8 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
             </ScrollArea>
 
             {/* Input area */}
-            <div className="p-6 border-t border-zinc-100">
-              <div className="flex gap-3 items-end">
+            <div className="p-3 md:p-6 border-t border-zinc-100">
+              <div className="flex gap-2 md:gap-3 items-end">
                 <div className="flex-1">
                   <textarea
                     ref={textareaRef}
@@ -492,7 +534,7 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
                   onClick={handleSendMessage}
                   disabled={!message.trim() || isLoading}
                   size="sm"
-                  className="rounded-full h-12 w-12 p-0"
+                  className="rounded-full h-10 w-10 md:h-12 md:w-12 p-0"
                 >
                   <Send size={16} />
                 </Button>

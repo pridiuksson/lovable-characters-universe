@@ -32,16 +32,16 @@ const Index = () => {
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-100/20 rounded-full blur-3xl animate-pulse" />
       <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-violet-100/20 rounded-full blur-3xl animate-pulse delay-1000" />
       
-      <div className="relative z-10 container mx-auto px-8 py-16">
+      <div className="relative z-10 container mx-auto px-4 py-8 md:px-8 md:py-16">
         {/* Minimalist header */}
-        <div className="text-center mb-20 animate-fade-in">
+        <div className="text-center mb-8 md:mb-20 animate-fade-in">
           <div className="inline-block">
-            <h1 className="text-6xl font-extralight text-zinc-900 mb-6 tracking-tight leading-none">
+            <h1 className="text-4xl md:text-6xl font-extralight text-zinc-900 mb-4 md:mb-6 tracking-tight leading-none">
               Character
-              <span className="block text-5xl font-thin text-zinc-600 mt-2">Universe</span>
+              <span className="block text-3xl md:text-5xl font-thin text-zinc-600 mt-1 md:mt-2">Universe</span>
             </h1>
             <div className="w-16 h-px bg-gradient-to-r from-transparent via-zinc-300 to-transparent mx-auto mb-8" />
-            <p className="text-lg font-light text-zinc-500 max-w-md mx-auto leading-relaxed">
+            <p className="text-base md:text-lg font-light text-zinc-500 max-w-md mx-auto leading-relaxed px-4">
               Where stories begin and imagination takes flight
             </p>
           </div>
