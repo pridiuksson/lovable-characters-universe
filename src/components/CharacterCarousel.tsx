@@ -14,7 +14,14 @@ const CharacterCarousel = ({ characters }: CharacterCarouselProps) => {
 
   useEffect(() => {
     const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 300);
+      // Calculate if user is near bottom of page
+      const scrollTop = window.scrollY;
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      
+      // Show button when user is within 100px of bottom
+      const isNearBottom = scrollTop + windowHeight >= documentHeight - 100;
+      setShowScrollTop(isNearBottom);
     };
 
     window.addEventListener('scroll', handleScroll);
@@ -85,7 +92,7 @@ const CharacterCarousel = ({ characters }: CharacterCarouselProps) => {
       {showScrollTop && (
         <button
           onClick={scrollToTop}
-          className="fixed bottom-8 right-4 z-50 w-12 h-12 bg-white/90 backdrop-blur-md rounded-full border border-zinc-200/50 shadow-lg md:hidden flex items-center justify-center hover:bg-white hover:scale-110 transition-all duration-300 animate-fade-in"
+          className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 w-12 h-12 bg-white/90 backdrop-blur-md rounded-full border border-zinc-200/50 shadow-lg md:hidden flex items-center justify-center hover:bg-white hover:scale-110 transition-all duration-300 animate-fade-in"
           aria-label="Scroll to top"
         >
           <ArrowUp size={18} className="text-zinc-600" />
