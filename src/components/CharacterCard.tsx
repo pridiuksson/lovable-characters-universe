@@ -1,4 +1,3 @@
-
 import { Card } from "@/types/Card";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { MessageCircle, ArrowLeft, Send, Share } from "lucide-react";
@@ -7,24 +6,39 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface CharacterCardProps {
   character: Card;
   className?: string;
 }
 
+interface ConversationMessage {
+  text: string;
+  isUser: boolean;
+  isCharacterIntro?: boolean;
+}
+
 const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
   const [isFlipped, setIsFlipped] = useState(false);
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState<Array<{text: string, isUser: boolean, isCharacterIntro?: boolean}>>([]);
+  const [messages, setMessages] = useState<ConversationMessage[]>([]);
   const [isHovered, setIsHovered] = useState(false);
   const [progress, setProgress] = useState(0);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const [isSharing, setIsSharing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isGoalAchieved, setIsGoalAchieved] = useState(false);
   
   const cardRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const mouseRef = useRef({ x: 0, y: 0 });
   const rafRef = useRef<number>();
+  const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   // Memoized styles for better performance
   const cardStyles = useMemo(() => ({
@@ -76,7 +90,7 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
     console.log('Card clicked, flipping to chat interface');
     setIsFlipped(true);
     
-    const introMessage = {
+    const introMessage: ConversationMessage = {
       text: character.description || character.goal,
       isUser: false,
       isCharacterIntro: true
@@ -90,19 +104,94 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
     setProgress(0);
   }, []);
 
-  const handleSendMessage = useCallback(() => {
-    if (!message.trim()) return;
+  const handleSendMessage = useCallback(async () => {
+    if (!message.trim() || isLoading) return;
     
-    setMessages(prev => [...prev, { text: message, isUser: true }]);
-    setProgress(prev => Math.min(prev + 10, 100));
-    
-    setTimeout(() => {
-      setMessages(prev => [...prev, { text: "I understand your message. Let me help you with that goal.", isUser: false }]);
-      setProgress(prev => Math.min(prev + 5, 100));
-    }, 1000);
-    
+    const userMessage = message.trim();
     setMessage("");
-  }, [message]);
+    setIsLoading(true);
+    
+    // Add user message to UI immediately
+    const newUserMessage: ConversationMessage = {
+      text: userMessage,
+      isUser: true
+    };
+    setMessages(prev => [...prev, newUserMessage]);
+    
+    // Add loading indicator
+    const loadingMessage: ConversationMessage = {
+      text: "...",
+      isUser: false
+    };
+    setMessages(prev => [...prev, loadingMessage]);
+    
+    try {
+      const response = await fetch('https://yevyfxmmijukjohbdjwv.supabase.co/functions/v1/play-turn', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          card_id: character.id.toString(),
+          user_message: userMessage
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      console.log('API Response:', data);
+      
+      // Remove loading message and add AI response
+      setMessages(prev => {
+        const withoutLoading = prev.slice(0, -1);
+        return [...withoutLoading, {
+          text: data.ai_response,
+          isUser: false
+        }];
+      });
+      
+      // Update progress
+      setProgress(prev => Math.min(prev + 10, 100));
+      
+      // Check if goal is achieved
+      if (data.is_goal_achieved && !isGoalAchieved) {
+        setIsGoalAchieved(true);
+        setProgress(100);
+        toast({
+          title: "Goal Achieved! 🎉",
+          description: "You've successfully completed the character's objective!",
+        });
+      }
+      
+    } catch (error) {
+      console.error('Error calling play-turn API:', error);
+      
+      // Remove loading message and show error
+      setMessages(prev => {
+        const withoutLoading = prev.slice(0, -1);
+        return [...withoutLoading, {
+          text: "Sorry, I'm having trouble connecting. Please try again.",
+          isUser: false
+        }];
+      });
+      
+      toast({
+        title: "Connection Error",
+        description: "Unable to send message. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+      // Restore focus to textarea after message is sent
+      setTimeout(() => {
+        textareaRef.current?.focus();
+      }, 100);
+    }
+  }, [message, isLoading, character.id, isGoalAchieved, toast]);
 
   const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -111,23 +200,52 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
     }
   }, [handleSendMessage]);
 
-  const handleShareClick = useCallback(() => {
+  const handleShareClick = useCallback(async () => {
+    if (isSharing) return;
+    
+    setIsSharing(true);
     const uniqueURL = `${window.location.origin}/play/${character.id}`;
     
-    if (navigator.share) {
-      navigator.share({
-        title: `Character #${character.id}`,
-        text: `Check out this amazing character conversation: ${character.goal}`,
-        url: uniqueURL,
-      }).catch((error) => console.log('Error sharing:', error));
-    } else {
-      navigator.clipboard.writeText(uniqueURL).then(() => {
-        console.log('Character URL copied to clipboard');
-      }).catch(() => {
-        console.log('Failed to copy URL');
-      });
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `Character #${character.id}`,
+          text: `Check out this character: ${character.goal}`,
+          url: uniqueURL,
+        });
+        
+        toast({
+          title: "Shared successfully",
+          description: "Character link has been shared",
+        });
+      } else {
+        await navigator.clipboard.writeText(uniqueURL);
+        
+        toast({
+          title: "Link copied",
+          description: "Character URL copied to clipboard",
+        });
+      }
+    } catch (error) {
+      console.log('Sharing failed:', error);
+      
+      try {
+        await navigator.clipboard.writeText(uniqueURL);
+        toast({
+          title: "Link copied",
+          description: "Character URL copied to clipboard",
+        });
+      } catch (clipboardError) {
+        toast({
+          title: "Share failed",
+          description: "Unable to share character link",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setTimeout(() => setIsSharing(false), 300);
     }
-  }, [character.id, character.goal]);
+  }, [character.id, character.goal, isSharing, toast]);
 
   // Optimized click outside handler
   useEffect(() => {
@@ -142,6 +260,35 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isFlipped, handleBackClick]);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (!isFlipped || messages.length === 0) return;
+    
+    // Scroll to bottom smoothly
+    const scrollElement = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+    if (scrollElement) {
+      setTimeout(() => {
+        scrollElement.scrollTo({
+          top: scrollElement.scrollHeight,
+          behavior: 'smooth'
+        });
+      }, 100);
+    }
+  }, [messages, isFlipped]);
+
+  // Auto-resize textarea based on content
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    
+    // Reset height to recalculate
+    textarea.style.height = 'auto';
+    
+    // Set to scrollHeight (content height), max 240px
+    const newHeight = Math.min(textarea.scrollHeight, 240);
+    textarea.style.height = `${newHeight}px`;
+  }, [message]);
 
   // Cleanup animation frame on unmount
   useEffect(() => {
@@ -238,17 +385,32 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
                 <ArrowLeft size={16} />
               </Button>
 
-              <div className="text-xs font-medium text-zinc-400 tracking-wider uppercase">
-                Character #{character.id}
+              <div className="flex items-center gap-4">
+                <div className="text-xs font-medium text-muted-foreground tracking-wider uppercase">
+                  Character #{character.id}
+                </div>
+                {isGoalAchieved && (
+                  <div className="text-xs font-semibold text-primary tracking-wider uppercase bg-primary/10 px-4 py-2 rounded-full border border-primary/20 shadow-sm">
+                    Goal Achieved! 🎉
+                  </div>
+                )}
               </div>
 
               <Button
                 onClick={handleShareClick}
                 variant="ghost"
                 size="sm"
-                className="rounded-full h-8 w-8 p-0 hover:bg-zinc-100"
+                disabled={isSharing}
+                className={`rounded-full h-8 w-8 p-0 hover:bg-zinc-100 transition-all duration-200 ${
+                  isSharing ? 'scale-95 opacity-70' : 'hover:scale-105'
+                }`}
               >
-                <Share size={16} />
+                <Share 
+                  size={16} 
+                  className={`transition-transform duration-200 ${
+                    isSharing ? 'animate-pulse' : ''
+                  }`} 
+                />
               </Button>
             </div>
 
@@ -256,18 +418,18 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
             <div className="px-6">
               <Progress 
                 value={progress} 
-                className="h-px bg-gradient-to-r from-zinc-200 via-zinc-300 to-zinc-200"
+                className={`h-px ${isGoalAchieved ? 'bg-gradient-to-r from-green-200 via-green-300 to-green-200' : 'bg-gradient-to-r from-zinc-200 via-zinc-300 to-zinc-200'}`}
               />
             </div>
 
             {/* Chat messages */}
-            <ScrollArea className="flex-1 px-6 py-6">
+            <ScrollArea ref={scrollAreaRef} className="flex-1 px-6 py-6">
               <div className="space-y-6">
                 {messages.map((msg, index) => (
                   <div key={index} className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}>
                     {msg.isCharacterIntro ? (
-                      <div className="flex items-start gap-8 max-w-full">
-                        <Avatar className="w-32 h-32 flex-shrink-0 ring-4 ring-zinc-200 shadow-lg">
+                      <div className="flex flex-col items-center gap-6 max-w-full md:flex-row md:items-start md:gap-8">
+                        <Avatar className="w-40 h-40 flex-shrink-0 ring-4 ring-zinc-200 shadow-lg md:w-32 md:h-32">
                           <AvatarImage
                             src={character.image_url}
                             alt={`Character ${character.id}`}
@@ -276,9 +438,9 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
                             }}
                           />
                         </Avatar>
-                        <div className="flex-1 space-y-4">
+                        <div className="flex-1 space-y-4 w-full text-center md:text-left">
                           {character.description && (
-                            <p className="text-lg text-zinc-700 leading-relaxed">
+                            <p className="text-base text-zinc-700 leading-relaxed md:text-lg">
                               {character.description}
                             </p>
                           )}
@@ -295,7 +457,9 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
                       <div className={`max-w-[75%] px-4 py-3 rounded-2xl transition-all duration-200 ${
                         msg.isUser 
                           ? 'bg-zinc-900 text-white ml-4' 
-                          : 'bg-zinc-100 text-zinc-700 mr-4'
+                          : msg.text === '...'
+                            ? 'bg-zinc-50 text-zinc-400 mr-4 animate-pulse'
+                            : 'bg-zinc-100 text-zinc-700 mr-4'
                       }`}>
                         <p className="text-sm leading-relaxed">{msg.text}</p>
                       </div>
@@ -310,18 +474,23 @@ const CharacterCard = ({ character, className = "" }: CharacterCardProps) => {
               <div className="flex gap-3 items-end">
                 <div className="flex-1">
                   <textarea
+                    ref={textareaRef}
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     onKeyPress={handleKeyPress}
-                    placeholder="Type your message..."
-                    className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-2xl text-sm text-zinc-700 placeholder:text-zinc-400 resize-none focus:outline-none focus:ring-2 focus:ring-zinc-300 focus:border-zinc-300 transition-all duration-200"
+                    placeholder={isGoalAchieved ? "Goal achieved! Continue chatting..." : "Type your message..."}
+                    className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-2xl text-sm text-zinc-700 placeholder:text-zinc-400 resize-none focus:outline-none focus:ring-2 focus:ring-zinc-300 focus:border-zinc-300 transition-all duration-200 disabled:opacity-50"
                     rows={1}
-                    style={{ minHeight: '48px', maxHeight: '120px' }}
+                    style={{ 
+                      minHeight: isMobile ? '120px' : '60px',
+                      maxHeight: '240px',
+                      overflowY: 'auto'
+                    }}
                   />
                 </div>
                 <Button
                   onClick={handleSendMessage}
-                  disabled={!message.trim()}
+                  disabled={!message.trim() || isLoading}
                   size="sm"
                   className="rounded-full h-12 w-12 p-0"
                 >
